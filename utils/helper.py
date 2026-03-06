@@ -251,8 +251,12 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 		title=dict(text=f'Multivariate Time Series of the selected batch'),
 		hovermode="x unified",
 		grid=dict(rows=num_series+1, columns=1),
+		# yaxis=dict(title=df.columns[0]),
+		# yaxis1=dict(title=df.columns[1])
+		# yaxes=[dict(title=f, showgrid=True, zeroline=False, showline=True, ticks='outside', row=num_series+1, col=1) for f in df.columns],
 		# use_container_width=True
 	)
+
 
 	fig = go.Figure(data=data, layout=layout)
 	for i, col in enumerate(df.columns):
@@ -273,6 +277,15 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 		# 					   yaxis='y' if i == 0 else f'y{i + 1}'
 		# 					   ), )
 
+	for i, col in enumerate(df.columns):
+		fig.update_layout(**{f'yaxis{i+1}': dict(title=col, showgrid=True, zeroline=False, showline=True, ticks='outside')})
+	fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+													   # tickangle=30
+													   )})
+	# fig['layout']['yaxis1']['title'] = f'Sensor1'
+	# for i, col in enumerate(df.columns):
+	# 	# fig['layout']['xaxis{}'.format(i)]['title'] = f'Sensor{i}'
+	# 	fig['layout']['yaxis{}'.format(i if i>0 else '')]['title'] = f'Sensor{i}'
 	# Update layout
 	# fig.update_layout(
 	# 	height=100 * (num_series+1),

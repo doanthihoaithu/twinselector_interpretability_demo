@@ -22,7 +22,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
 	# mts_running_dataset = config.mts_running_dataset
 	# print(mts_data_folder, mts_running_dataset)
 # Page Configuration and Title
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
     # css = '''
     # <style>
     #     [data-testid="stSidebar"]{
