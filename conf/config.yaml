@@ -10,3 +10,5 @@ hydra:
 random:
   seed: 42
 
+mts_data_folder: data/mts
+mts_running_dataset: settings_six
