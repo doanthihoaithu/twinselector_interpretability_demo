@@ -27,8 +27,14 @@ st.markdown(
 
 st.markdown('# Overview')
 st.markdown('The following figures provide a visual summary of the average VUS-PR and AUC-PR, along with interpretability metrics (Hit@1), across different components.')
-st.markdown('These components include: (i) eight individual multivariate detectors; (ii) the Oracle (shown in white), representing the theoretical upper bound of model selection performance; (iii) Averaging Ensembling (shown in orange), which combines detector outputs via simple averaging; and (iv) Best Time Series Classification (shown in blue), corresponding to the best-performing multivariate time series classification model used for model selection.')
-st.markdown('Click tab Interpretability for interactive visualization')
+st.markdown('These components include: \n'
+            '* (i) ten individual multivariate detectors; \n'
+            '* (ii) the Oracle (shown in white), representing the theoretical upper bound of model selection performance; \n'
+            '* (iii) Averaging Ensembling (shown in orange), which combines all base detectors via simple averaging; \n'
+            '* (iv) Model Selector (shown in blue) which select only one detector for a given MTS; and \n'
+            '* (v) Model Selector with detector combination (shown in green).'
+            )
+st.markdown('Click tab Interpretability for interactive visualization, select tab **Explore the results** for visualizing MTS and their corresponding anomaly scores')
 
 
 
