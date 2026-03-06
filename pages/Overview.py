@@ -34,7 +34,7 @@ st.markdown('These components include: \n'
             '* (iv) Model Selector (shown in blue) which select only one detector for a given MTS; and \n'
             '* (v) Model Selector with detector combination (shown in green).'
             )
-st.markdown('Click tab Interpretability for interactive visualization, select tab **Explore the results** for visualizing MTS and their corresponding anomaly scores')
+st.markdown('Click tab Interpretability for interactive visualization, select tab **Explore the results** for visualizing MTS and their corresponding anomaly scores. Note that this tab shows only some testing samples.')
 
 
 
