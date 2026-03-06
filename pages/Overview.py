@@ -26,7 +26,7 @@ st.markdown(
     )
 
 st.markdown('# Overview')
-st.markdown('The following figures provide a visual summary of the average VUS-PR and AUC-PR, along with interpretability metrics (Hit2 and KL divergence), across different components.')
+st.markdown('The following figures provide a visual summary of the average VUS-PR and AUC-PR, along with interpretability metrics (Hit@1), across different components.')
 st.markdown('These components include: (i) eight individual multivariate detectors; (ii) the Oracle (shown in white), representing the theoretical upper bound of model selection performance; (iii) Averaging Ensembling (shown in orange), which combines detector outputs via simple averaging; and (iv) Best Time Series Classification (shown in blue), corresponding to the best-performing multivariate time series classification model used for model selection.')
 st.markdown('Click tab Interpretability for interactive visualization')
 
@@ -42,7 +42,11 @@ st.image(image, caption='VUS_PR of detectors on synthetic datasets', use_column_
 
 image_path = "figures/INTERPRETABILITY_CONDITIONAL_HIT_1_SCORE.png"
 image = Image.open(image_path)
-st.image(image, caption='INTERPRETABILITY_HIT_2_SCORE of detectors on synthetic datasets', use_column_width=True)
+st.image(image, caption='INTERPRETABILITY_CONDITIONAL_HIT_1_SCORE of detectors on synthetic datasets', use_column_width=True)
+
+image_path = "figures/DUAL_MODEL_SELECTOR.png"
+image = Image.open(image_path)
+st.image(image, caption='TWO MODEL SELECTORS FOR ACCURACY AND INTERPRETABILITY', use_column_width=True)
 
 
 # image_path = "figures/INTERPRETABILITY_LOG_SCORE.png"
