@@ -32,6 +32,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
+st.set_page_config(layout="wide")
 st.markdown(
         """
         <style>
