@@ -40,7 +40,7 @@ image_path = "figures/VUS_PR.png"
 image = Image.open(image_path)
 st.image(image, caption='VUS_PR of detectors on synthetic datasets', use_column_width=True)
 
-image_path = "figures/INTERPRETABILITY_HIT_2_SCORE.png"
+image_path = "figures/INTERPRETABILITY_CONDITIONAL_HIT_1_SCORE.png"
 image = Image.open(image_path)
 st.image(image, caption='INTERPRETABILITY_HIT_2_SCORE of detectors on synthetic datasets', use_column_width=True)
 
