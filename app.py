@@ -4,11 +4,9 @@
 @when: Sylligardos PhD, 1st year (2024)
 @what: ADecimo
 """
-import hydra
 import streamlit as st
 from PIL import Image
 import pandas as pd
-from omegaconf import DictConfig
 # from st_pages import Page, show_pages
 from streamlit import Page
 
