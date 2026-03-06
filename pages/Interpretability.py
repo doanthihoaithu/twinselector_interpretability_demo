@@ -6,9 +6,11 @@
 """
 import os
 
+import hydra
 import streamlit as st
 import pandas as pd
 import plotly.graph_objs as go
+from omegaconf import DictConfig
 
 from utils.constant import list_measures, list_length, method_group, methods_ens, old_method, all_datasets
 from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts
@@ -16,17 +18,55 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
 
 # list_batches = ['batch_0.csv', 'batch_1.csv', 'batch_2.csv', 'batch_3.csv', 'batch_4.csv']
 
+# @hydra.main(config_path="conf", config_name="config.yaml")
+# def main(config: DictConfig):
+	# mts_data_folder = config.mts_data_folder
+	# mts_running_dataset = config.mts_running_dataset
+	# print(mts_data_folder, mts_running_dataset)
 # Page Configuration and Title
+st.set_page_config(layout="wide")
+    # css = '''
+    # <style>
+    #     [data-testid="stSidebar"]{
+    #         min-width: 400px;
+    #         max-width: 800px;
+    #     }
+    # </style>
+    # '''
+    # st.markdown(css, unsafe_allow_html=True)
+st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"] > div:first-child{
+            width: 300px;
+        }
+        [data-testid="stSidebar"][aria-expanded="false"] > div:first-child{
+            width: 300px;
+            margin-left: -300px;
+        }
+        """,
+        unsafe_allow_html=True,
+    )
 st.markdown('# Interpretability Evaluation')
 # st.markdown('Overall evaluation of 125 classification algorithms used for model selection for anomaly detection.
 # We utilize 496 randomly selected time series from the TSB-UAD benchmark.')
 
-mts_data_dir = 'data/mts/settings_one/data'
-mts_scores_dir = 'data/mts/settings_one/scores'
-mts_merged_scores_dir = 'data/mts/settings_one/merged_scores/settings_one'
+mts_root_data_dir = 'data/mts'
+datasets = os.listdir(mts_root_data_dir)
+mts_infor_dict = {f: {
+			'mts_data_dir' : f'data/mts/{f}/data',
+			'mts_scores_dir' : f'data/mts/{f}/scores',
+			'mts_merged_scores_dir' : f'data/mts/{f}/merged_scores/{f}'
+		} for f in datasets}
+# mts_data_dir = 'data/mts/settings_one/data'
+# mts_scores_dir = 'data/mts/settings_one/scores'
+# mts_merged_scores_dir = 'data/mts/settings_one/merged_scores/settings_one'
 
-test_df = pd.read_csv('data/mts/settings_one/merged_scores/settings_one/current_inference_time.csv')
+default_dataset = 'settings_six'
+test_df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_inference_time.csv')
 testing_batch = [f'{f}.zip' for f in test_df['filename'].unique()]
+mts_data_dir = mts_infor_dict[default_dataset]['mts_data_dir']
+mts_scores_dir = mts_infor_dict[default_dataset]['mts_scores_dir']
 list_batches = [f for f in os.listdir(mts_data_dir) if 'multivariate_labels' not in f and f in testing_batch]
 list_batches_multivariate_labels = [f for f in os.listdir(mts_data_dir) if 'multivariate_labels' in f and f in testing_batch]
 list_algorithms = os.listdir(mts_scores_dir)
@@ -46,8 +86,8 @@ with tab_overall:
 	# Dataset selection
 	with col_dataset_over:
 		datasets = st.multiselect('Pick datasets',
-								  ['settings_one'],
-								  default='settings_one',
+								  ['settings_six'],
+								  default='settings_six',
 								  help="Select one or more datasets for analysis.")
 
 	# Method selection
@@ -63,12 +103,12 @@ with tab_overall:
 								help="Select the time window lengths applicable to the selected methods.")
 
 	# Loading data from CSV files
-	df = pd.read_csv('data/mts/settings_one/merged_scores/settings_one/current_accuracy_{}.csv'.format(metric_name))
+	df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_accuracy_{metric_name}.csv')
 	df = df.set_index('filename')
 
 	# Generate dataframe for plotting
 	df_toplot = generate_dataframe(df, datasets, methods_family, length, type_exp='_score')
-	st.dataframe(df_toplot)
+	st.dataframe(df_toplot, use_container_width=True)
 
 	# Plot box plot using Plotly
 	plot_box_plot(df_toplot, measure_name=metric_name)
@@ -78,11 +118,11 @@ with tab_overall:
 with (tab_explore):
 	# Setup columns for selecting metric, dataset, method, and window length
 	col_dataset_exp, col_ts_exp, col_meth_exp, col_length_exp = st.columns([1, 1, 1, 1])
-	
+
 	# Metric selection
 	with col_dataset_exp:
 		dataset_exp = st.selectbox('Pick a dataset',
-								   ['settings_one'],
+								   ['settings_six'],
 								   help="Select a synthetic dataset to explore.")
 
 	# Dataset selection
@@ -98,11 +138,11 @@ with (tab_explore):
 	# Window length selection
 	with col_length_exp:
 		length_selected_exp = st.selectbox('Pick a window length', list_length)
-	
+
 	# Method selection
 	with col_meth_exp:
 		method_selected_exp = st.selectbox('Pick a method', [meth.format(length_selected_exp) for meth in methods_ens])
-	
+
 
 
 	path_ts = f'data/mts/{dataset_exp}/data/{batch_id}'
@@ -129,12 +169,13 @@ with (tab_explore):
 	contribution_dfs_dict = dict()
 	for alg in list_algorithms:
 		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id)
-		distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
+		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
+		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution.zip')
 		print('distributionfilename', distribution_file_name)
 		contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 		if os.path.exists(anomaly_score_path):
 			scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
-			contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, header=None, sep='\s+')
+			contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, sep=',')
 			print(contribution_score_path)
 			print("distribution.shape", contribution_dfs_dict[alg].shape)
 		else:
@@ -167,7 +208,7 @@ with (tab_explore):
 # 	# Method selection, showing methods tailored to selected window length
 # 	with col_meth_exp:
 # 		method_selected_exp = st.selectbox('Pick a method', [meth.format(length_selected_exp) for meth in methods_ens])
-  	
+
 	# Custom dataset upload handling
 	# if dataset_exp == 'Upload your own':
 	# 	uploaded_ts = st.file_uploader("Upload your time series")
@@ -254,4 +295,3 @@ with (tab_explore):
 	# 	# Create and display the plot
 	# 	fig = dict(data=trace_scores, layout=layout)
 	# 	st.plotly_chart(fig, use_container_width=True)
-

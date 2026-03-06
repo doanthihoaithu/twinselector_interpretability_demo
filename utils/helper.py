@@ -218,8 +218,14 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 			customdata = []
 			# print('Contribution.shape', contribution_df.shape)
 			# print('Score shape', scores_df.shape)
+			print(f'Contribution df shape', contribution_df.shape)
 			for row_index, row in contribution_df.iterrows():
+				# print(f'Row index {row_index}', row)
+				top_1_id = int(row[2])
+				top_2_id = int(row[1])
+				hit_k_score = row[0]
 				# print(row_index, row)
+				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
 				str_list = ",".join([f'<b>s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
 				customdata.append(str_list)
 			# print('Contribution shape', len(customdata))
@@ -233,16 +239,19 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 						   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y{num_series+1}',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
 								   customdata=customdata,
+								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
 								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
 								   ),)
 
 	layout = dict(
-		height=100 * (num_series + 1),
+		# height=100 * (num_series + 1),
+		height=70 * (num_series + 1),
 		showlegend=True,
 		hoversubplots="axis",
 		title=dict(text=f'Multivariate Time Series of the selected batch'),
 		hovermode="x unified",
 		grid=dict(rows=num_series+1, columns=1),
+		# use_container_width=True
 	)
 
 	fig = go.Figure(data=data, layout=layout)

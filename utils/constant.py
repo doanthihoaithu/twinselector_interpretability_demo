@@ -26,12 +26,13 @@ Moreover, you can download the datasets and the models using the following links
 We propose a benchmark and an evaluation of 16 time series classifiers used as model selection methods (with 12 anomaly detectors to be selected) applied on 16 datasets from different domains. Our pipeline can be summarized in the following figure.
 """
 
-
-list_measures = ['VUS_PR', 'AUC_PR', 'INTERPRETABILITY_HIT_2_SCORE', 'INTERPRETABILITY_LOG_SCORE']
+common_measures = ['AUC_PR', 'VUS_PR']
+interpetability_measures = [f'INTERPRETABILITY_HIT_{f}_SCORE' for f in range(1,10)]
+list_measures = common_measures + interpetability_measures
 
 
 # list_length = [16, 32, 64, 128, 256, 512, 768, 1024]
-list_length = [32]
+list_length = [16, 32, 64, 128, 256]
 
 dataset_stats_real = ['period_length', 'ratio', 'nb_anomaly', 'average_anom_length',
 	   'median_anom_length', 'std_anom_length', 'data_len']
@@ -64,20 +65,20 @@ methods = ['inception_time_default_16',
 
 # old_method = ['IFOREST', 'LOF', 'MP', 'NORMA', 'IFOREST1', 'HBOS', 'OCSVM',
 # 	   'PCA', 'AE', 'CNN', 'LSTM', 'POLY']
-old_method = ['DenoisingAutoEncoder (DAE)', 'AutoEncoder (AE)', 'HBOS', 'COF', 'PCC', 'LOF', 'COPOD', 'CBLOF']
+# old_method = ['DenoisingAutoEncoder (DAE)', 'AutoEncoder (AE)', 'Random Black Forest (RR)',
+# 			  'HBOS', 'RobustPCA', 'PCC', 'LOF', 'COPOD', 'CBLOF', 'Torsk']
+old_method =  ['cblof', 'auto_encoder', 'copod', 'denoising_auto_encoder', 'encdec_ad', 'hbos', 'omni_anomaly', 'random_black_forest', 'tran_ad','mtad_gat' ]
 	   
 oracle = ['GENIE', 'MORTY']
 
 methods_ens = [
-	# 'inception_time_default_{}_score',
-	# 'convnet_default_{}_score',
-	# 'resnet_default_{}_score',
-	'convnet_{}_score',
-	'resnet_{}_score',
-	# 'sit_conv_patch_{}_score',
-	# 'sit_linear_patch_{}_score',
-	# 'sit_stem_original_{}_score',
-	# 'sit_stem_relu_{}_score',
+	'inception_time_default_{}_score',
+	'convnet_default_{}_score',
+	'resnet_default_{}_score',
+	'sit_conv_patch_{}_score',
+	'sit_linear_patch_{}_score',
+	'sit_stem_original_{}_score',
+	'sit_stem_relu_{}_score',
 	'rocket_{}_score',
 	'ada_boost_{}_score',
 	'knn_{}_score',
@@ -86,16 +87,17 @@ methods_ens = [
 	'mlp_{}_score',
 	'bayes_{}_score',
 	'qda_{}_score',
-	'svc_linear_{}_score']
+	'svc_linear_{}_score'
+	]
 
-# methods_conv = [
-# 	'inception_time_default_{}_score',
-# 	'convnet_default_{}_score',
-# 	'resnet_default_{}_score', ]
 methods_conv = [
-	# 'inception_time_{}_score',
-	'convnet_{}_score',
-	'resnet_{}_score', ]
+	'inception_time_default_{}_score',
+	'convnet_default_{}_score',
+	'resnet_default_{}_score', ]
+# methods_conv = [
+# 	'inception_time_{}_score',
+# 	'convnet_{}_score',
+# 	'resnet_{}_score', ]
 
 methods_sit = [
 	'sit_conv_patch_{}_score',
@@ -142,10 +144,11 @@ all_datasets = ['SMD', 'NAB', 'SVDB', 'SensorScope', 'GHL', 'Genesis', 'OPPORTUN
 
 
 method_group = {
-	   # 'Transformer': methods_sit,
+	   'Transformer': methods_sit,
 	   'Convolutional': methods_conv,
 	   'Rocket': methods_ts,
-	   'Features': methods_classical}
+	   'Features': methods_classical
+}
 
 template_names = {
 	'inception_time_{}': 'InceptTime-{}',

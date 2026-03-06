@@ -21,8 +21,31 @@ from utils.constant import description_intro, list_measures, list_length, method
 from utils.helper import init_names
 
 
-@hydra.main(config_path="conf", config_name="config.yaml")
-def main(config: DictConfig):
+# @hydra.main(config_path="conf", config_name="config.yaml")
+def main():
+    st.set_page_config(layout="wide")
+    # css = '''
+    # <style>
+    #     [data-testid="stSidebar"]{
+    #         min-width: 400px;
+    #         max-width: 800px;
+    #     }
+    # </style>
+    # '''
+    # st.markdown(css, unsafe_allow_html=True)
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"][aria-expanded="true"] > div:first-child{
+            width: 100px;
+        }
+        [data-testid="stSidebar"][aria-expanded="false"] > div:first-child{
+            width: 100px;
+            margin-left: -100px;
+        }
+        """,
+        unsafe_allow_html=True,
+    )
 # Specify what pages should be shown in the sidebar
 #     show_pages(
 #         [
