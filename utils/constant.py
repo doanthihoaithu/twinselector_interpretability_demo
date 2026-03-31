@@ -26,13 +26,15 @@ Moreover, you can download the datasets and the models using the following links
 We propose a benchmark and an evaluation of 16 time series classifiers used as model selection methods (with 12 anomaly detectors to be selected) applied on 16 datasets from different domains. Our pipeline can be summarized in the following figure.
 """
 
-common_measures = ['AUC_PR', 'VUS_PR']
-interpetability_measures = [f'INTERPRETABILITY_HIT_{f}_SCORE' for f in range(1,10)]
-list_measures = common_measures + interpetability_measures
+common_measures = ['FFVUS_PR']
+# interpetability_measures = [f'INTERPRETABILITY_HIT_{f}_SCORE' for f in range(1,10)]
+unconditional_interpetability_measures = [f'INTERPRETABILITY_UNCONDITIONAL_NDCG_HIT_{f}_SCORE' for f in range(1,6)]
+conditional_interpetability_measures = ['INTERPRETABILITY_CONDITIONAL_VOLUMN_PR_WITH_NDCG_HIT_5_SCORE_COMBINATION']
+list_measures = common_measures + conditional_interpetability_measures + unconditional_interpetability_measures
 
 
 # list_length = [16, 32, 64, 128, 256, 512, 768, 1024]
-list_length = [16, 32, 64, 128, 256]
+list_length = [128, 256]
 
 dataset_stats_real = ['period_length', 'ratio', 'nb_anomaly', 'average_anom_length',
 	   'median_anom_length', 'std_anom_length', 'data_len']
@@ -67,7 +69,15 @@ methods = ['inception_time_default_16',
 # 	   'PCA', 'AE', 'CNN', 'LSTM', 'POLY']
 # old_method = ['DenoisingAutoEncoder (DAE)', 'AutoEncoder (AE)', 'Random Black Forest (RR)',
 # 			  'HBOS', 'RobustPCA', 'PCC', 'LOF', 'COPOD', 'CBLOF', 'Torsk']
-old_method =  ['cblof', 'auto_encoder', 'copod', 'denoising_auto_encoder', 'encdec_ad', 'hbos', 'omni_anomaly', 'random_black_forest', 'tran_ad','mtad_gat' ]
+old_method =  ['cblof', 'auto_encoder', 'copod', 'denoising_auto_encoder',
+			   'encdec_ad', 'hbos', 'omni_anomaly', 'random_black_forest',
+			   'tran_ad','mtad_gat',
+			   ]
+
+baselines = ['oracle', 'avg_ens']
+
+best_ms_combination = ['decision_tree_128_average_4']
+best_ms_selection = ['decision_tree_256_preds']
 	   
 oracle = ['GENIE', 'MORTY']
 
@@ -106,6 +116,9 @@ methods_sit = [
 	'sit_stem_relu_{}_score', ]
 
 methods_ts = ['rocket_{}_score']
+
+method_best_ms_combination = ['decision_tree_128_average_4']
+method_best_ms = ['decision_tree_256_preds']
 
 color_palette = [
 	'#D32F2F', # Red
@@ -208,6 +221,8 @@ methods_colors = {
 	"best_ms": "#33D4FF",
 	"detectors": "#CCCCCC",
 	"feature_based": "#91AAC2",
+	"best_ms_selection": "#33D4FF",
+    "best_ms_combine": "#81E759",
 	"sit": "#FFB522",
 	"conv": "#4494FF",
 	"conv_2": "#0048FF",

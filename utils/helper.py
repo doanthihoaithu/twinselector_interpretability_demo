@@ -16,7 +16,10 @@ from numpy.random import default_rng as rng
 import plotly.figure_factory as ff
 import numpy as np
 
-from .constant import methods_colors, methods_conv, methods_sit, methods_ts, methods_classical, old_method, list_length, method_group, template_names
+import matplotlib.colors as mcolors
+
+from .constant import methods_colors, methods_conv, methods_sit, methods_ts, methods_classical, old_method, list_length, \
+	method_group, template_names, best_ms_combination, best_ms_selection, baselines
 
 
 def init_names(list_length, template_names):
@@ -63,14 +66,17 @@ def plot_box_plot(df, measure_name, scale='linear'):
 
 	# Create color palette
 	my_pal = {method: methods_colors["detectors"] for method in old_method}
+	my_pal.update({method: methods_colors['best_ms_selection'] for method in best_ms_selection})
+	my_pal.update({method: methods_colors['best_ms_combine'] for method in best_ms_combination})
+	my_pal.update({"Avg Ens": methods_colors["avg_ens"], 'Oracle': methods_colors["oracle"]})
+	my_pal.update({"avg_ens": methods_colors["avg_ens"], 'oracle': methods_colors["oracle"]})
+
 	for family, color in zip([methods_conv, methods_sit, methods_ts, methods_classical],
 							 [methods_colors["conv"], methods_colors["sit"], methods_colors["rocket"],
 							  methods_colors["feature_based"]]):
 		for length in list_length:
 			my_pal_tmp = {method.format(length): color for method in family}
 			my_pal = {**my_pal, **my_pal_tmp}
-	my_pal.update({"Avg Ens": methods_colors["avg_ens"], 'Oracle': methods_colors["oracle"]})
-
 	# Add same names with '_inf' instead of '_score'
 	my_pal_plus = {}
 	
@@ -130,13 +136,14 @@ def plot_box_plot(df, measure_name, scale='linear'):
 		order=order, 
 		palette=my_pal_plus, 
 		showfliers=False, 
-		orient='h',
+		orient='v',
 		saturation=1, 
 		whis=0.241289844
 	)
 	
 	g.xaxis.grid(True)
-	plt.xlabel(measure_name)
+	plt.ylabel(measure_name)
+	plt.xticks(rotation=90)
 	if scale == 'log':
 		plt.xscale('log')
 	st.pyplot(fig)
@@ -167,7 +174,7 @@ def process_anomaly_index_to_windows(label_ts):
 	# print("Anomaly windows", windows)
 	return windows
 
-def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict):
+def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict, detector_color_map):
 	"""
 	Plots a batch of multivariate time series using Plotly.
 
@@ -214,6 +221,8 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 	if len(scores_dfs_dict.keys()) > 0:
 		# Add traces for each score DataFrame
 		for method_name, scores_df in scores_dfs_dict.items():
+			color = detector_color_map.get(method_name, 'black')  # Default to black if method name not found in color map
+			# print('Color for method', method_name, color)
 			contribution_df = contribution_dfs_dict[method_name]
 			customdata = []
 			# print('Contribution.shape', contribution_df.shape)
@@ -239,6 +248,7 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 						   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y{num_series+1}',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
 								   customdata=customdata,
+								   line=dict(color=color),
 								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
 								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
 								   ),)
@@ -248,7 +258,7 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 		height=70 * (num_series + 1),
 		showlegend=True,
 		hoversubplots="axis",
-		title=dict(text=f'Multivariate Time Series of the selected batch'),
+		title=dict(text=f'Multivariate Time Series of the selected batch: {batch_id}. Anomaly scores of detectors are shown in the last subplot, with their contribution to the score in the hover.'),
 		hovermode="x unified",
 		grid=dict(rows=num_series+1, columns=1),
 		# yaxis=dict(title=df.columns[0]),
@@ -309,8 +319,113 @@ def plot_batch_mts(df, multivariate_labels_df, scores_dfs_dict, contribution_dfs
 	# st.plotly_chart(fig)
 
 	# Display the plot in Streamlit
-	st.plotly_chart(fig, use_container_width=True)
+	st.plotly_chart(fig, use_container_width=True, key='plot_mts')
 
+def plot_interpretability_curves(visualized_batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map):
+	"""
+	Plots a batch of multivariate time series using Plotly.
+
+	Args:
+		df (DataFrame): DataFrame containing multivariate time series data.
+	"""
+
+	interpretability_detail_df = combined_interpretability_metrics_of_base_detectors_df[
+		combined_interpretability_metrics_of_base_detectors_df['test_batch_id'] == visualized_batch_id]
+	# Check if DataFrame is empty
+	if interpretability_detail_df.empty:
+		st.warning(f"👻 It's a ghost town in here... No data of batch {visualized_batch_id} found for plotting! Please select something from above to view data.")
+		return
+
+	vus_pr_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if
+					  col.startswith('vus_pr')]
+	L_value_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if
+					   col not in vus_pr_columns and col.startswith('L_')]
+
+	fig = go.Figure()
+
+	# colors = list(mcolors.TABLEAU_COLORS.values())
+
+	for i, alg in enumerate(old_method + ['avg_ens'] + best_ms_combination + best_ms_selection):
+		color = detector_color_map.get(alg, 'black')  # Default to black if method name not found in color map
+
+		alg_vus_pr_list = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			][vus_pr_columns].values.reshape(-1).tolist()
+
+		alg_L_value_list = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			][L_value_columns].values.reshape(-1).tolist()
+
+		# print(alg_vus_pr_list.shape, alg_L_value_list.shape)
+
+		original_vus_pr = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			]['FFVUS_PR'].values.reshape(-1).tolist()[0]
+		overall_interpretability_score = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			]['INTERPRETABILITY_SCORE'].values.reshape(-1).tolist()[0]
+
+		# Interpretability line
+		# print(alg_L_value_list[:10], alg_L_value_list[:10])
+		fig.add_trace(go.Scatter(
+			x=alg_L_value_list,
+			y=alg_vus_pr_list,
+			mode='lines+text',
+			name=f'{alg}_vus_pr_interp_avg={overall_interpretability_score:.3f}',
+			line=dict(color=color),
+			text=[f'{alg}_vus_pr_interp_avg={overall_interpretability_score:.3f}'],
+			textposition='top right',
+			textfont=dict(color=color),
+			legendgroup=alg
+		))
+		# print(original_vus_pr*len(alg_L_value_list))
+		fig.add_trace(go.Scatter(
+			x=alg_L_value_list,
+			y=[original_vus_pr] * len(alg_L_value_list),
+			mode='lines+text',
+			name=f'{alg}_vus_pr={original_vus_pr:.3f}',
+			line=dict(color=color, dash='dash'),
+			text=[f'{alg}_vus_pr={original_vus_pr:.3f}'],
+			textposition='top right',
+			textfont=dict(color=color),
+			legendgroup=alg
+		))
+
+	# fig.add_trace(go.Scatter(
+	#     x=alg_L_value_list,
+	#     y=[overall_interpretability_score]*len(alg_L_value_list),
+	#     mode='lines+text',
+	#     name=f'{alg}_overall_interpretability={overall_interpretability_score:.3f}',
+	#     line=dict(color=color, dash='dash'),
+	#     text=[f'{alg}_overall_interpretability={overall_interpretability_score:.3f}'],
+	#     textposition='bottom right',
+	#     textfont=dict(color=color),
+	#     legendgroup=alg
+	# ))
+
+	# Horizontal baseline (axhline equivalent)
+	# fig.add_hline(
+	#     y=original_vus_pr,
+	#     line=dict(color=color, dash='dash'),
+	#     annotation_text=f'{alg}_vus_pr_origin={original_vus_pr:.3f}',
+	#     annotation_position='right',
+	#     legendgroup=alg
+	# )
+
+	fig.update_layout(
+		# width=1000,
+		height=700,
+		legend=dict(orientation='v'),
+		xaxis_title='L_value',
+		yaxis_title='vus_pr_interp',
+		hovermode='x unified',
+	)
+
+	# fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+	# 												   # tickangle=30
+	# 												   )})
+	# Display the plot in Streamlit
+	st.plotly_chart(fig, use_container_width=True, key='plot_interpretability_curves')
 
 def generate_dataframe(df, datasets, methods_family, length, type_exp='_score'):
 	"""
@@ -336,7 +451,7 @@ def generate_dataframe(df, datasets, methods_family, length, type_exp='_score'):
 		return df.loc[df['dataset'].isin(datasets)][[method.format(l).replace('_score', type_exp)
 													  for method_g in methods_family
 													  for method in method_group[method_g]
-													  for l in length] + old_method]
+													  for l in length] + old_method + baselines + best_ms_combination + best_ms_selection]
 	elif type_exp == '_inf':
 		# Generate DataFrame for inference experiments
 		return df.loc[df['dataset'].isin(datasets)][[method.format(l).replace('_score', type_exp)
@@ -348,7 +463,7 @@ def generate_dataframe(df, datasets, methods_family, length, type_exp='_score'):
 		return df.loc[df['dataset'].isin(datasets)][[method.format(l).replace('_score', '').replace('_default', '')
 													  for method_g in methods_family
 													  for method in method_group[method_g]
-													  for l in length] + old_method]
+													  for l in length] + old_method + baselines + best_ms_combination + best_ms_selection]
 
 
 
@@ -424,3 +539,24 @@ def rename_columns_and_update_palette(df, palette):
 	df.rename(columns=new_columns, inplace=True)
 
 	return df, palette
+
+def estimate_dimension_contribution_with_a_buffer(dimension_contribution: np.ndarray, buffer: int) -> np.ndarray:
+    """
+    Estimate the contribution of each dimension with a buffer.
+
+    Args:
+        dimension_contribution: 2D array of shape (T, D) with contribution scores for each dimension at each timestamp.
+        buffer: number of timestamps to consider before and after the detected anomaly.
+
+    Returns:
+        2D array of shape (T, D) with estimated contribution scores for each dimension at each timestamp.
+    """
+    T, D = dimension_contribution.shape
+    estimated_contribution = np.zeros_like(dimension_contribution)
+
+    for t in range(T):
+        start = max(0, t - buffer)
+        end = min(T, t + buffer + 1)
+        estimated_contribution[t] = np.trapz(dimension_contribution[start:end, :], axis=0)
+
+    return estimated_contribution

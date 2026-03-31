@@ -6,12 +6,15 @@
 """
 import os
 
+import plotly
 import streamlit as st
 import pandas as pd
 import plotly.graph_objs as go
 
 from utils.constant import list_measures, list_length, method_group, methods_ens, old_method, all_datasets
-from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts
+from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts, \
+	estimate_dimension_contribution_with_a_buffer, plot_interpretability_curves
+
 # from models.run_model import run_model
 
 # list_batches = ['batch_0.csv', 'batch_1.csv', 'batch_2.csv', 'batch_3.csv', 'batch_4.csv']
@@ -32,7 +35,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 st.markdown(
         """
         <style>
@@ -63,18 +66,30 @@ mts_infor_dict = {f: {
 
 default_dataset = 'settings_six'
 test_df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_inference_time.csv')
+test_df.sort_values(by=['filename'], ascending=[True], inplace=True)
 testing_batch = [f'{f}.zip' for f in test_df['filename'].unique()]
 mts_data_dir = mts_infor_dict[default_dataset]['mts_data_dir']
 mts_scores_dir = mts_infor_dict[default_dataset]['mts_scores_dir']
-list_batches = [f for f in os.listdir(mts_data_dir) if 'multivariate_labels' not in f and f in testing_batch]
+list_batches = sorted([f for f in os.listdir(mts_data_dir) if 'multivariate_labels' not in f and f in testing_batch])
 list_batches_multivariate_labels = [f for f in os.listdir(mts_data_dir) if 'multivariate_labels' in f and f in testing_batch]
 list_algorithms = os.listdir(mts_scores_dir)
+
+# Loading data from CSV files
+combined_metrics_of_base_detectors_df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/combined_results.csv')
+
+
+new_interpretability_metrics_file = 'data/mts/settings_six/merged_scores/settings_six/combined_vus_pr_list.csv'
+combined_interpretability_metrics_of_base_detectors_df = pd.read_csv(new_interpretability_metrics_file, index_col=0)
+vus_pr_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if col.startswith('vus_pr')]
+L_value_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if col not in vus_pr_columns and col.startswith('L_')]
+combined_interpretability_metrics_of_base_detectors_df['INTERPRETABILITY_SCORE'] = combined_interpretability_metrics_of_base_detectors_df[vus_pr_columns].mean(axis=1)
+combined_interpretability_metrics_of_base_detectors_df['FFVUS_PR'] = combined_interpretability_metrics_of_base_detectors_df.merge(combined_metrics_of_base_detectors_df[['algorithm','test_batch_id', 'FFVUS_PR']], on=['algorithm', 'test_batch_id'], how='left')['FFVUS_PR']
 
 # Create tabs for displaying results
 tab_overall, tab_explore = st.tabs(["Overall results", "Explore the results"])
 
 with tab_overall:
-	col_metric_over, col_dataset_over, col_method_over, col_length_over = st.columns([1, 1, 1, 1])
+	col_metric_over, col_dataset_over, col_method_over, col_length_over = st.columns([3, 1, 1, 1])
 
 	# Metric selection
 	with col_metric_over:
@@ -93,17 +108,40 @@ with tab_overall:
 	with col_method_over:
 		methods_family = st.multiselect('Pick methods:',
 										list(method_group.keys()),
+										disabled=True,
 										help="Select one or more method groups for comparison.")
 
 	# Window length selection
 	with col_length_over:
 		length = st.multiselect('Pick window lengths:',
 								list_length,
+								disabled=True,
 								help="Select the time window lengths applicable to the selected methods.")
 
-	# Loading data from CSV files
-	df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_accuracy_{metric_name}.csv')
-	df = df.set_index('filename')
+
+	current_metric_df = combined_metrics_of_base_detectors_df[['algorithm', 'test_batch_id', metric_name]]
+
+	oracle_metric = current_metric_df[
+		current_metric_df['algorithm'].isin(old_method)].groupby(['test_batch_id'])[
+		[metric_name]].max()
+	oracle_metric['algorithm'] = 'oracle'
+	oracle_metric.reset_index(inplace=True)
+
+	current_metric_df = pd.concat([current_metric_df, oracle_metric], axis=0, ignore_index=True)
+
+	df = pd.DataFrame()
+	df['test_batch_id'] = combined_metrics_of_base_detectors_df['test_batch_id'].unique()
+	for alg in current_metric_df['algorithm'].unique():
+		metric_score_df = current_metric_df[current_metric_df['algorithm'] == alg][['test_batch_id', metric_name]]
+		df[alg] = df.merge(metric_score_df, on='test_batch_id', how='left')[metric_name]
+
+	df = df.set_index('test_batch_id')
+	df.index.name = 'filename'
+	df.sort_index(inplace=True)
+	df['dataset'] = 'settings_six'
+
+	# df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_accuracy_{metric_name}.csv')
+	# df = df.set_index('filename')
 
 	# Generate dataframe for plotting
 	df_toplot = generate_dataframe(df, datasets, methods_family, length, type_exp='_score')
@@ -136,11 +174,12 @@ with (tab_explore):
 
 	# Window length selection
 	with col_length_exp:
-		length_selected_exp = st.selectbox('Pick a window length', list_length)
+		length_selected_exp = st.selectbox('Pick a window length', list_length, disabled=True)
 
 	# Method selection
 	with col_meth_exp:
-		method_selected_exp = st.selectbox('Pick a method', [meth.format(length_selected_exp) for meth in methods_ens])
+		method_selected_exp = st.selectbox('Pick a method', [meth.format(length_selected_exp) for meth in methods_ens],
+										   disabled=True)
 
 
 
@@ -149,8 +188,8 @@ with (tab_explore):
 					 AD_method in old_method}
 
 	# Display the detector selected by the chosen method
-	st.markdown(
-		f"Detector selected by {method_selected_exp}: {df.at[batch_id.replace('.zip',''), method_selected_exp.replace('_score', '_class')]}")
+	# st.markdown(
+	# 	f"Detector selected by {method_selected_exp}: {df.at[batch_id.replace('.zip',''), method_selected_exp.replace('_score', '_class')]}")
 
 	# Loading data from CSV files
 	# df = pd.read_csv('data/merged_scores_{}.csv'.format(metric_name))
@@ -174,8 +213,16 @@ with (tab_explore):
 		contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 		if os.path.exists(anomaly_score_path):
 			scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
-			contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, sep=',')
-			print(contribution_score_path)
+			raw_contribution_df = pd.read_csv(contribution_score_path, sep=',')
+			# contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, sep=',')
+
+			estimated_dimension_contribution = estimate_dimension_contribution_with_a_buffer(
+				raw_contribution_df.values,
+				buffer=10)
+			estimated_dimension_contribution = estimated_dimension_contribution / estimated_dimension_contribution.sum(
+				axis=1, keepdims=True)
+			contribution_dfs_dict[alg] = pd.DataFrame(estimated_dimension_contribution)
+			# print(contribution_score_path)
 			print("distribution.shape", contribution_dfs_dict[alg].shape)
 		else:
 			print(f"Path does not exist: {anomaly_score_path}")
@@ -184,8 +231,20 @@ with (tab_explore):
 	# df_toplot = generate_dataframe(df, datasets, methods_family, length, type_exp='_score')
 	# st.dataframe(df_toplot)
 
+
+	colors = plotly.colors.qualitative.Plotly
+	detector_color_map = {method: colors[i % len(colors)] for i, method in enumerate(old_method)}
+	detector_color_map['oracle'] = 'black'
+	detector_color_map['avg_ens'] = 'orange'
+	detector_color_map['decision_tree_128_average_4'] = 'green'
+	detector_color_map['decision_tree_256_preds'] = 'blue'
+
 	# Plot box plot using Plotly
-	plot_batch_mts(batch_df[sensor_columns], batch_multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict)
+	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict, detector_color_map)
+
+	if batch_id.endswith('.zip'):
+		batch_id = batch_id[:-4]
+	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map )
 
 # Tab for exploring individual results
 # with tab_explore:

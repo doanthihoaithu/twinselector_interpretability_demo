@@ -6,3 +6,5 @@
 .hydra
 *.log
 **/.DS_Store
+
+data/mts/settings_six_testing
