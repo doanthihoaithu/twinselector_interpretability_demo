@@ -1,5 +1,5 @@
 st_pages
-streamlit==1.40.1
+streamlit
 pandas
 numpy
 plotly
