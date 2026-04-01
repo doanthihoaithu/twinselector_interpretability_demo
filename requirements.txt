@@ -6,3 +6,5 @@ plotly
 matplotlib
 seaborn
 scikit-learn
+s3fs
+st-files-connection

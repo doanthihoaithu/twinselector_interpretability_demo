@@ -8,3 +8,5 @@
 **/.DS_Store
 
 data/mts/settings_six_testing
+.streamlit/secrets.toml
+data/mts/settings_six/scores
