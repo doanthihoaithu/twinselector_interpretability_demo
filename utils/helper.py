@@ -210,7 +210,8 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 							   name=col,
 							   xaxis='x',
 							   yaxis='y' if i == 0 else f'y{i+1}',
-							   legendgroup='mts_data'
+							   legendgroup='mts_data',
+							   visible='legendonly',
 							   ),)
 		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
 		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
