@@ -256,7 +256,8 @@ with (tab_explore):
 		# 	scores_dfs_dict[alg] = s3_conn.read(anomaly_score_path, input_format="csv", ttl=600)
 		# 	raw_contribution_df = s3_conn.read(contribution_score_path, input_format="csv", ttl=600)
 
-			scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
+			# scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
+			scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep=',')
 			raw_contribution_df = pd.read_csv(contribution_score_path, sep=',')
 			# contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, sep=',')
 
