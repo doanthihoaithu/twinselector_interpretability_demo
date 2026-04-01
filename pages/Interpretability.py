@@ -6,6 +6,7 @@
 """
 import os
 
+import numpy as np
 import plotly
 import streamlit as st
 import pandas as pd
@@ -267,8 +268,9 @@ with (tab_explore):
 			estimated_dimension_contribution = estimated_dimension_contribution / estimated_dimension_contribution.sum(
 				axis=1, keepdims=True)
 			contribution_dfs_dict[alg] = pd.DataFrame(estimated_dimension_contribution)
-			ranking_scores_dfs_dict[alg] = _ndcg_sample_scores(batch_multivariate_labels_df.values,
-															   estimated_dimension_contribution, k=5)
+			# ranking_scores_dfs_dict[alg] = _ndcg_sample_scores(batch_multivariate_labels_df.values,
+			# 												   estimated_dimension_contribution, k=5)
+			ranking_scores_dfs_dict[alg] = np.zeros(batch_multivariate_labels_df.shape[0])
 			# print(contribution_score_path)
 			print("distribution.shape", contribution_dfs_dict[alg].shape)
 			print("ranking_scores.shape", ranking_scores_dfs_dict[alg].shape)
