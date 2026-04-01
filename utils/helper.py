@@ -241,7 +241,7 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 				hit_k_score = row[0]
 				# print(row_index, row)
 				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
-				str_list = ",".join([f'<b>s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
 				# ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
 				customdata.append(str_list)
 				# ranking_customdata.append(ranking_list)
