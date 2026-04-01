@@ -212,7 +212,7 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 							   yaxis='y' if i == 0 else f'y{i+1}',
 							   legendgroup='mts_data',
 							   # visible='legendonly',
-							   # ),)
+							   ),)
 		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
 		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
 		# 					   mode='markers',
@@ -243,9 +243,9 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 				# print(row_index, row)
 				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
 				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
-				# ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
 				customdata.append(str_list)
-				# ranking_customdata.append(ranking_list)
+				ranking_customdata.append(ranking_list)
 			# print('Contribution shape', len(customdata))
 			# fig.add_trace(
 			# 	go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
@@ -263,17 +263,17 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 								   legendgroup=method_name
 								   ),)
 
-			# data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
-			# 					   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y{num_series + 2}',
-			# 					   # customdata=['a:1, b:2, c:3'] * len(scores_df),
-			# 					   # customdata=ranking_customdata,
-			# 					   # hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
-			# 					   hovertemplate="%{y:.4f}",
-			# 					   line=dict(color=color),
-			# 					   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
-			# 					   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
-			# 					   legendgroup=method_name
-			# 					   ), )
+			data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y{num_series + 2}',
+								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+								   customdata=ranking_customdata,
+								   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+								   # hovertemplate="%{y:.4f}",
+								   line=dict(color=color),
+								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+								   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+								   legendgroup=method_name
+								   ), )
 
 	layout = dict(
 		# height=100 * (num_series + 1),
@@ -345,6 +345,8 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 	# st.plotly_chart(fig)
 
 	# Display the plot in Streamlit
+	fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
+	print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
 	st.plotly_chart(fig, use_container_width=True, key='plot_mts')
 
 def plot_interpretability_curves(visualized_batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map):
@@ -452,6 +454,9 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 	# fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
 	# 												   # tickangle=30
 	# 												   )})
+
+	fig.write_html(f'html/{visualized_batch_id}.zip_interpretability_curves.html')  # Save the figure to a file
+	print(f"Saved interpretability curves plot for batch {visualized_batch_id} at html/{visualized_batch_id}.zip_interpretability_curves.html")
 	# Display the plot in Streamlit
 	st.plotly_chart(fig, use_container_width=True, key='plot_interpretability_curves')
 

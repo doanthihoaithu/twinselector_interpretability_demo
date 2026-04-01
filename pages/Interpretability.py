@@ -109,7 +109,7 @@ combined_interpretability_metrics_of_base_detectors_df['INTERPRETABILITY_SCORE']
 combined_interpretability_metrics_of_base_detectors_df['FFVUS_PR'] = combined_interpretability_metrics_of_base_detectors_df.merge(combined_metrics_of_base_detectors_df[['algorithm','test_batch_id', 'FFVUS_PR']], on=['algorithm', 'test_batch_id'], how='left')['FFVUS_PR']
 
 # Create tabs for displaying results
-tab_overall, tab_explore = st.tabs(["Overall results", "Explore the results"])
+tab_overall, tab_examples, tab_explore, = st.tabs(["Overall results", 'Examples', "Explore the results"])
 
 with tab_overall:
 	col_metric_over, col_dataset_over, col_method_over, col_length_over = st.columns([3, 1, 1, 1])
@@ -172,6 +172,41 @@ with tab_overall:
 
 	# Plot box plot using Plotly
 	plot_box_plot(df_toplot, measure_name=metric_name)
+
+with tab_examples:
+	# Setup columns for selecting metric, dataset, method, and window length
+	col_dataset_exp, col_ts_exp = st.columns([1,1])
+
+	example_batch_ids = [f.replace('_mts_vs_scores.html', '') for f in os.listdir('html/') if f.endswith('_mts_vs_scores.html')]
+
+	# Metric selection
+	with col_dataset_exp:
+		dataset_exp = st.selectbox('Pick a dataset',
+								   ['settings_six'],
+								   key='example_dataset_select',
+								   help="Select a synthetic dataset to explore.")
+
+	# Dataset selection
+	with col_ts_exp:
+		# datasets = st.multiselect('Pick datasets',
+		# 						  all_datasets,
+		# 						  help="Select one or more datasets for analysis.")
+		batch_id = st.selectbox('Pick synthetic batch:',
+								example_batch_ids,
+								key='example_batch_select',
+								help="Select one or more datasets for analysis.")
+
+	path_to_html_1 = f'html/{batch_id}_mts_vs_scores.html'
+	path_to_html_2 =  f'html/{batch_id}_interpretability_curves.html'
+
+	with open(path_to_html_1, 'r') as f:
+		html_content_1 = f.read()
+	st.header("Show Time Series and Anomaly Scores + Interpretability Scores (NCDG@K-only available for ground-truth anomalies)")
+	st.components.v1.html(html_content_1, scrolling=True, height=1000)
+	with open(path_to_html_2, 'r') as f:
+		html_content_2 = f.read()
+	st.header("Show Interpretability Curves")
+	st.components.v1.html(html_content_2, scrolling=True, height=800)
 
 
 # Tab for overall results with inline selection
@@ -268,9 +303,9 @@ with (tab_explore):
 			estimated_dimension_contribution = estimated_dimension_contribution / estimated_dimension_contribution.sum(
 				axis=1, keepdims=True)
 			contribution_dfs_dict[alg] = pd.DataFrame(estimated_dimension_contribution)
-			# ranking_scores_dfs_dict[alg] = _ndcg_sample_scores(batch_multivariate_labels_df.values,
-			# 												   estimated_dimension_contribution, k=5)
-			ranking_scores_dfs_dict[alg] = np.zeros(batch_multivariate_labels_df.shape[0])
+			ranking_scores_dfs_dict[alg] = _ndcg_sample_scores(batch_multivariate_labels_df.values,
+															   estimated_dimension_contribution, k=5)
+			# ranking_scores_dfs_dict[alg] = np.zeros(batch_multivariate_labels_df.shape[0])
 			# print(contribution_score_path)
 			print("distribution.shape", contribution_dfs_dict[alg].shape)
 			print("ranking_scores.shape", ranking_scores_dfs_dict[alg].shape)
@@ -290,14 +325,18 @@ with (tab_explore):
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
 	# Plot box plot using Plotly
-	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
-				   scores_dfs_dict,
-				   contribution_dfs_dict,
-				   ranking_scores_dfs_dict,
-				   detector_color_map)
+	st.header("Show Time Series and Anomaly Scores + Interpretability Scores (NCDG@K-only available for ground-truth anomalies)")
+	st.markdown('Disabled for now as it is very slow to visualize all the scores for all the detectors, and the interpretability curves already give a good overview of the interpretability performance of the detectors. Will re-enable it in the future with some optimizations to speed up the visualization.')
+	# plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+	# 			   scores_dfs_dict,
+	# 			   contribution_dfs_dict,
+	# 			   ranking_scores_dfs_dict,
+	# 			   detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
+
+	st.header("Show Interpretability Curves")
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map )
 
 # Tab for exploring individual results
