@@ -14,7 +14,7 @@ from sklearn.metrics._ranking import _ndcg_sample_scores
 
 from st_files_connection import FilesConnection
 
-s3_conn = st.connection('s3', type=FilesConnection)
+# s3_conn = st.connection('s3', type=FilesConnection)
 # df = s3_conn.read("interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/cblof/synthetic_batch_801.out", input_format="csv", ttl=600)
 # print("S3 df shape", df.shape)
 
@@ -42,7 +42,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 st.markdown(
         """
         <style>
