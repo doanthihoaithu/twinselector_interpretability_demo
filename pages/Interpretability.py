@@ -65,7 +65,7 @@ mts_root_data_dir = 'data/mts'
 datasets = os.listdir(mts_root_data_dir)
 mts_infor_dict = {f: {
 			'mts_data_dir' : f'data/mts/{f}/data',
-			'mts_scores_dir' : f'data/mts/{f}/sub_scores',
+			'mts_scores_dir' : f'data/mts/{f}/zip_sub_scores',
 			'mts_merged_scores_dir' : f'data/mts/{f}/merged_scores/{f}'
 		} for f in datasets}
 # mts_data_dir = 'data/mts/settings_one/data'
@@ -236,9 +236,9 @@ with (tab_explore):
 		# print('distributionfilename', distribution_file_name)
 		# contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 
-		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id.replace('.zip', ''))
+		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id)
 		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
-		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution')
+		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution.zip')
 		print('distributionfilename', distribution_file_name)
 		contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 
