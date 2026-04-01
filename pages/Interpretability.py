@@ -290,11 +290,11 @@ with (tab_explore):
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
 	# Plot box plot using Plotly
-	# plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
-	# 			   scores_dfs_dict,
-	# 			   contribution_dfs_dict,
-	# 			   ranking_scores_dfs_dict,
-	# 			   detector_color_map)
+	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+				   scores_dfs_dict,
+				   contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
