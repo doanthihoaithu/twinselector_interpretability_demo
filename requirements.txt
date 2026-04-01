@@ -1,7 +1,7 @@
 st_pages
 streamlit
 pandas
-numpy==2.0.0
+numpy==1.24.4
 plotly
 matplotlib
 seaborn
