@@ -10,6 +10,7 @@ import plotly
 import streamlit as st
 import pandas as pd
 import plotly.graph_objs as go
+from sklearn.metrics._ranking import _ndcg_sample_scores
 
 from utils.constant import list_measures, list_length, method_group, methods_ens, old_method, all_datasets
 from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts, \
@@ -205,6 +206,7 @@ with (tab_explore):
 
 	scores_dfs_dict = dict()
 	contribution_dfs_dict = dict()
+	ranking_scores_dfs_dict = dict()
 	for alg in list_algorithms:
 		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id)
 		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
@@ -222,8 +224,11 @@ with (tab_explore):
 			estimated_dimension_contribution = estimated_dimension_contribution / estimated_dimension_contribution.sum(
 				axis=1, keepdims=True)
 			contribution_dfs_dict[alg] = pd.DataFrame(estimated_dimension_contribution)
+			ranking_scores_dfs_dict[alg] = _ndcg_sample_scores(batch_multivariate_labels_df.values,
+															   estimated_dimension_contribution, k=5)
 			# print(contribution_score_path)
 			print("distribution.shape", contribution_dfs_dict[alg].shape)
+			print("ranking_scores.shape", ranking_scores_dfs_dict[alg].shape)
 		else:
 			print(f"Path does not exist: {anomaly_score_path}")
 	print(scores_dfs_dict.keys())
@@ -240,7 +245,11 @@ with (tab_explore):
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
 	# Plot box plot using Plotly
-	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict, detector_color_map)
+	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+				   scores_dfs_dict,
+				   contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]

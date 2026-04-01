@@ -174,7 +174,9 @@ def process_anomaly_index_to_windows(label_ts):
 	# print("Anomaly windows", windows)
 	return windows
 
-def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict, detector_color_map):
+def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map):
 	"""
 	Plots a batch of multivariate time series using Plotly.
 
@@ -207,7 +209,8 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 							   mode='lines',
 							   name=col,
 							   xaxis='x',
-							   yaxis='y' if i == 0 else f'y{i+1}'
+							   yaxis='y' if i == 0 else f'y{i+1}',
+							   legendgroup='mts_data'
 							   ),)
 		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
 		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
@@ -221,22 +224,27 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 	if len(scores_dfs_dict.keys()) > 0:
 		# Add traces for each score DataFrame
 		for method_name, scores_df in scores_dfs_dict.items():
+			ranking_scores_numpy = ranking_scores_dfs_dict[method_name]
 			color = detector_color_map.get(method_name, 'black')  # Default to black if method name not found in color map
 			# print('Color for method', method_name, color)
 			contribution_df = contribution_dfs_dict[method_name]
 			customdata = []
+			ranking_customdata = []
 			# print('Contribution.shape', contribution_df.shape)
 			# print('Score shape', scores_df.shape)
 			print(f'Contribution df shape', contribution_df.shape)
 			for row_index, row in contribution_df.iterrows():
 				# print(f'Row index {row_index}', row)
+				dimensional_label = multivariate_labels_df.iloc[row_index].values
 				top_1_id = int(row[2])
 				top_2_id = int(row[1])
 				hit_k_score = row[0]
 				# print(row_index, row)
 				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
 				str_list = ",".join([f'<b>s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
 				customdata.append(str_list)
+				ranking_customdata.append(ranking_list)
 			# print('Contribution shape', len(customdata))
 			# fig.add_trace(
 			# 	go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
@@ -250,17 +258,29 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 								   customdata=customdata,
 								   line=dict(color=color),
 								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
-								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
+								   legendgroup=method_name
 								   ),)
+
+			data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y{num_series + 2}',
+								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+								   customdata=ranking_customdata,
+								   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+								   line=dict(color=color),
+								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+								   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+								   legendgroup=method_name
+								   ), )
 
 	layout = dict(
 		# height=100 * (num_series + 1),
-		height=70 * (num_series + 1),
+		height=70 * (num_series + 2),
 		showlegend=True,
 		hoversubplots="axis",
 		title=dict(text=f'Multivariate Time Series of the selected batch: {batch_id}. Anomaly scores of detectors are shown in the last subplot, with their contribution to the score in the hover.'),
 		hovermode="x unified",
-		grid=dict(rows=num_series+1, columns=1),
+		grid=dict(rows=num_series+2, columns=1),
 		# yaxis=dict(title=df.columns[0]),
 		# yaxis1=dict(title=df.columns[1])
 		# yaxes=[dict(title=f, showgrid=True, zeroline=False, showline=True, ticks='outside', row=num_series+1, col=1) for f in df.columns],
@@ -292,6 +312,10 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 	fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
 													   # tickangle=30
 													   )})
+	fig.update_layout(**{
+		f'yaxis{df.shape[1] + 2}': dict(title='NCDG@K', showgrid=True, zeroline=False, showline=True, ticks='outside',
+										# tickangle=30
+										)})
 	# fig['layout']['yaxis1']['title'] = f'Sensor1'
 	# for i, col in enumerate(df.columns):
 	# 	# fig['layout']['xaxis{}'.format(i)]['title'] = f'Sensor{i}'
@@ -376,6 +400,7 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 			text=[f'{alg}_vus_pr_interp_avg={overall_interpretability_score:.3f}'],
 			textposition='top right',
 			textfont=dict(color=color),
+			hovertemplate="%{y:.4f}",
 			legendgroup=alg
 		))
 		# print(original_vus_pr*len(alg_L_value_list))
@@ -388,6 +413,7 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 			text=[f'{alg}_vus_pr={original_vus_pr:.3f}'],
 			textposition='top right',
 			textfont=dict(color=color),
+			hovertemplate="%{y:.4f}",
 			legendgroup=alg
 		))
 
