@@ -298,7 +298,7 @@ with (tab_explore):
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
-	# plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map )
+	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map )
 
 # Tab for exploring individual results
 # with tab_explore:
