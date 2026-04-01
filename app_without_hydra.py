@@ -33,6 +33,7 @@ from utils.helper import init_names
 #     ]
 # )
 
+# st.set_page_config(layout="wide")
 pg = st.navigation([Page("pages/Overview.py"), Page("pages/Interpretability.py")])
 pg.run()
 
