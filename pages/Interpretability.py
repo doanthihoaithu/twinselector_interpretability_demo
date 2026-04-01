@@ -64,7 +64,7 @@ mts_root_data_dir = 'data/mts'
 datasets = os.listdir(mts_root_data_dir)
 mts_infor_dict = {f: {
 			'mts_data_dir' : f'data/mts/{f}/data',
-			'mts_scores_dir' : f'data/mts/{f}/scores',
+			'mts_scores_dir' : f'data/mts/{f}/sub_scores',
 			'mts_merged_scores_dir' : f'data/mts/{f}/merged_scores/{f}'
 		} for f in datasets}
 # mts_data_dir = 'data/mts/settings_one/data'
@@ -235,23 +235,29 @@ with (tab_explore):
 		# print('distributionfilename', distribution_file_name)
 		# contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 
+		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id.replace('.zip', ''))
+		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
+		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution')
+		print('distributionfilename', distribution_file_name)
+		contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
+
 		# df = s3_conn.read(
 		# 	"interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/cblof/synthetic_batch_801.out",
 		# 	input_format="csv", ttl=600)
 		# print("S3 df shape", df.shape)
 
-		anomaly_score_path = f'interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/{alg}/{batch_id.replace(".zip", "")}'
-		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
-		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution')
-		# print('distributionfilename', distribution_file_name)
-		contribution_score_path = f'interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/{alg}/{distribution_file_name}'
-		# if os.path.exists(anomaly_score_path):
-		if True:
-			scores_dfs_dict[alg] = s3_conn.read(anomaly_score_path, input_format="csv", ttl=600)
-			raw_contribution_df = s3_conn.read(contribution_score_path, input_format="csv", ttl=600)
+		# anomaly_score_path = f'interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/{alg}/{batch_id.replace(".zip", "")}'
+		# # distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
+		# distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution')
+		# # print('distributionfilename', distribution_file_name)
+		# contribution_score_path = f'interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/{alg}/{distribution_file_name}'
+		if os.path.exists(anomaly_score_path):
+		# if True:
+		# 	scores_dfs_dict[alg] = s3_conn.read(anomaly_score_path, input_format="csv", ttl=600)
+		# 	raw_contribution_df = s3_conn.read(contribution_score_path, input_format="csv", ttl=600)
 
-			# scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
-			# raw_contribution_df = pd.read_csv(contribution_score_path, sep=',')
+			scores_dfs_dict[alg] = pd.read_csv(anomaly_score_path, header=None, sep='\s+')
+			raw_contribution_df = pd.read_csv(contribution_score_path, sep=',')
 			# contribution_dfs_dict[alg] = pd.read_csv(contribution_score_path, sep=',')
 
 			estimated_dimension_contribution = estimate_dimension_contribution_with_a_buffer(

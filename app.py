@@ -21,7 +21,7 @@ from utils.helper import init_names
 
 # @hydra.main(config_path="conf", config_name="config.yaml")
 def main():
-    st.set_page_config(layout="wide")
+    # st.set_page_config(layout="wide")
     # css = '''
     # <style>
     #     [data-testid="stSidebar"]{
