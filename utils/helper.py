@@ -566,8 +566,8 @@ def rename_columns_and_update_palette(df, palette):
 
 	return df, palette
 
-def estimate_dimension_contribution_with_a_buffer(dimension_contribution: np.ndarray, buffer: int) -> np.ndarray:
-    """
+def estimate_dimension_contribution_with_a_buffer(dimension_contribution: np.ndarray, buffer: int) -> np.array:
+	"""
     Estimate the contribution of each dimension with a buffer.
 
     Args:
@@ -577,12 +577,15 @@ def estimate_dimension_contribution_with_a_buffer(dimension_contribution: np.nda
     Returns:
         2D array of shape (T, D) with estimated contribution scores for each dimension at each timestamp.
     """
-    T, D = dimension_contribution.shape
-    estimated_contribution = np.zeros_like(dimension_contribution)
 
-    for t in range(T):
-        start = max(0, t - buffer)
-        end = min(T, t + buffer + 1)
-        estimated_contribution[t] = np.trapz(dimension_contribution[start:end, :], axis=0)
+	T, D = dimension_contribution.shape
+	estimated_contribution = np.zeros_like(dimension_contribution)
 
-    return estimated_contribution
+	for t in range(T):
+		start = max(0, t - buffer)
+		end = min(T, t + buffer + 1)
+		if np.version.version >= '2.0.0':
+			estimated_contribution[t] = np.trapezoid(dimension_contribution[start:end, :], axis=0)
+		else:
+			estimated_contribution[t] = np.trapz(dimension_contribution[start:end, :], axis=0)
+	return estimated_contribution
