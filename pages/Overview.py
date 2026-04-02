@@ -1,7 +1,9 @@
 import streamlit as st
 from PIL import Image
 
-# st.set_page_config(layout="wide")
+from utils.helper import set_streamlit_page_config_once
+
+set_streamlit_page_config_once(mode="centered")
     # css = '''
     # <style>
     #     [data-testid="stSidebar"]{

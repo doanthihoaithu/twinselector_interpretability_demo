@@ -6,6 +6,8 @@
 """
 
 import kaleido #required
+import streamlit
+
 print('kaleido version:', kaleido.__version__) #0.2.1
 
 
@@ -774,3 +776,11 @@ def estimate_dimension_contribution_with_a_buffer(dimension_contribution: np.nda
 		else:
 			estimated_contribution[t] = np.trapz(dimension_contribution[start:end, :], axis=0)
 	return estimated_contribution
+
+def set_streamlit_page_config_once(mode):
+	try:
+		streamlit.set_page_config(layout=mode)
+	except streamlit.errors.StreamlitAPIException as e:
+		if "can only be called once per app" in e.__str__():
+			return
+		raise e

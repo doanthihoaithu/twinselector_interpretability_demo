@@ -6,22 +6,19 @@
 """
 import os
 
-import numpy as np
+import pandas as pd
 import plotly
 import streamlit as st
-import pandas as pd
-import plotly.graph_objs as go
 from sklearn.metrics._ranking import _ndcg_sample_scores
 
-# from st_files_connection import FilesConnection
+from utils.constant import old_method
+from utils.helper import plot_batch_mts_simple, \
+	estimate_dimension_contribution_with_a_buffer, set_streamlit_page_config_once
 
+# from st_files_connection import FilesConnection
 # s3_conn = st.connection('s3', type=FilesConnection)
 # df = s3_conn.read("interpretability-anomaly-scores-665163999694-us-east-2-an/sub_scores/settings_six/cblof/synthetic_batch_801.out", input_format="csv", ttl=600)
 # print("S3 df shape", df.shape)
-
-from utils.constant import list_measures, list_length, method_group, methods_ens, old_method, all_datasets
-from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts, plot_batch_mts_simple, \
-	estimate_dimension_contribution_with_a_buffer, plot_interpretability_curves
 
 # from models.run_model import run_model
 
@@ -43,7 +40,8 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
+set_streamlit_page_config_once(mode="wide")
 st.markdown(
         """
         <style>
