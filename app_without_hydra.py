@@ -27,7 +27,7 @@ from streamlit import Page
 # )
 
 # st.set_page_config(layout="wide")
-pg = st.navigation([Page("pages/Overview.py"), Page("pages/Interpretability.py")])
+pg = st.navigation([Page("pages/Overview.py"), Page("pages/Interpretability.py"),  Page("pages/Score.py")])
 pg.run()
 
 

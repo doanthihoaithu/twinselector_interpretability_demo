@@ -56,7 +56,7 @@ def main():
 #         ]
 #     )
 
-    pg = st.navigation([Page("pages/Overview.py"), Page("pages/Interpretability.py")])
+    pg = st.navigation([Page("pages/Overview.py"), Page("pages/Interpretability.py"), Page("pages/Score.py")])
     pg.run()
 
 
