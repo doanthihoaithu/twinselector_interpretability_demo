@@ -110,7 +110,7 @@ combined_interpretability_metrics_of_base_detectors_df['FFVUS_PR'] = combined_in
 tab_overall, tab_explore, = st.tabs(["Overall results", "Explore the results"])
 
 with tab_overall:
-	col_metric_over, col_dataset_over, col_method_over, col_length_over = st.columns([3, 1, 1, 1])
+	col_metric_over, col_dataset_over = st.columns([8, 2])
 
 	# Metric selection
 	with col_metric_over:
@@ -126,18 +126,18 @@ with tab_overall:
 								  help="Select one or more datasets for analysis.")
 
 	# Method selection
-	with col_method_over:
-		methods_family = st.multiselect('Pick methods:',
-										list(method_group.keys()),
-										disabled=True,
-										help="Select one or more method groups for comparison.")
-
-	# Window length selection
-	with col_length_over:
-		length = st.multiselect('Pick window lengths:',
-								list_length,
-								disabled=True,
-								help="Select the time window lengths applicable to the selected methods.")
+	# with col_method_over:
+	# 	methods_family = st.multiselect('Pick methods:',
+	# 									list(method_group.keys()),
+	# 									disabled=True,
+	# 									help="Select one or more method groups for comparison.")
+	#
+	# # Window length selection
+	# with col_length_over:
+	# 	length = st.multiselect('Pick window lengths:',
+	# 							list_length,
+	# 							disabled=True,
+	# 							help="Select the time window lengths applicable to the selected methods.")
 
 
 	current_metric_df = combined_metrics_of_base_detectors_df[['algorithm', 'test_batch_id', metric_name]]
@@ -165,6 +165,8 @@ with tab_overall:
 	# df = df.set_index('filename')
 
 	# Generate dataframe for plotting
+	methods_family = []
+	length = []
 	df_toplot = generate_dataframe(df, datasets, methods_family, length, type_exp='_score')
 	st.dataframe(df_toplot, use_container_width=True)
 
