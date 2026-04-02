@@ -43,7 +43,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 st.markdown(
         """
         <style>
@@ -111,11 +111,11 @@ combined_interpretability_metrics_of_base_detectors_df['FFVUS_PR'] = combined_in
 # Create tabs for displaying results
 tab_overall, tab_explore, = st.tabs(["Overall scores", "Explore the results"])
 
-with tab_overall:
+with tab_explore:
 	st.markdown('Nothing here!')
 
 # Tab for overall results with inline selection
-with (tab_explore):
+with (tab_overall):
 	# Setup columns for selecting metric, dataset, method, and window length
 	col_dataset_exp, col_ts_exp = st.columns([1, 3])
 
