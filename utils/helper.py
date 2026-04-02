@@ -250,18 +250,18 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 			# print('Score shape', scores_df.shape)
 			# print(f'Contribution df shape', contribution_df.shape)
 
-			# for row_index, row in contribution_df.iterrows():
-			# 	# print(f'Row index {row_index}', row)
-			# 	dimensional_label = multivariate_labels_df.iloc[row_index].values
-			# 	top_1_id = int(row[2])
-			# 	top_2_id = int(row[1])
-			# 	hit_k_score = row[0]
-			# 	# print(row_index, row)
-			# 	# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
-			# 	str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
-			# 	ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
-			# 	customdata.append(str_list)
-			# 	ranking_customdata.append(ranking_list)
+			for row_index, row in contribution_df.iterrows():
+				# print(f'Row index {row_index}', row)
+				dimensional_label = multivariate_labels_df.iloc[row_index].values
+				top_1_id = int(row[2])
+				top_2_id = int(row[1])
+				hit_k_score = row[0]
+				# print(row_index, row)
+				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
+				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
+				customdata.append(str_list)
+				ranking_customdata.append(ranking_list)
 
 			# print('Contribution shape', len(customdata))
 			# fig.add_trace(
@@ -270,21 +270,21 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 			# 	row=num_series + 1,
 			# 	col=1
 			# )
-			data.append(go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+			data.append(go.Scatter(x=scores_df.index.astype(int).to_list(), y=scores_df[scores_df.columns[0]].to_list(),
 						   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y2',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
-								   # customdata=customdata,
+								   customdata=customdata,
 								   line=dict(color=color),
 								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
-								   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
+								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
 								   legendgroup=method_name
 								   ),)
 
-			data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+			data.append(go.Scatter(x=scores_df.index.astype(int).to_list(), y=ranking_scores_numpy.tolist(),
 								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y3',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
-								   # customdata=ranking_customdata,
-								   # hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+								   customdata=ranking_customdata,
+								   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
 								   # hovertemplate="%{y:.4f}",
 								   line=dict(color=color),
 								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
