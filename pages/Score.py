@@ -217,7 +217,7 @@ with (tab_overall):
 	detector_color_map['decision_tree_128_average_4'] = 'green'
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
-
+	st.header("Show Scores")
 	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
 						  scores_dfs_dict,
 						  contribution_dfs_dict,
@@ -227,7 +227,7 @@ with (tab_overall):
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
 
-	st.header("Show Interpretability Curves")
+	st.header("Show Interpretability (NCDG@K) Curves")
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
 
 # Tab for exploring individual results
