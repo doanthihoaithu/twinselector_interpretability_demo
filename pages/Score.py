@@ -245,6 +245,7 @@ with (tab_overall):
 	st.markdown('Initial insights from the interpretability curves: \n')
 	st.markdown('Good interpretable detector D: D_vus_pr_interp_avg >> D_vus_pr')
 	st.markdown('Bad interpretable detector D: D_vus_pr_interp_avg <= D_vus_pr')
+	st.markdown('For comparing all detectors on this metric, please navigate page "Interpretability" and select the second metric ("INTERPRETABILITY_CONDITIONAL_VOLUMN_PR_WITH_NDCG_HIT_5_SCORE").')
 
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
 
