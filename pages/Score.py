@@ -218,6 +218,12 @@ with (tab_overall):
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
 	st.header("Show Scores")
+	st.write('This section visualizes labels, anomaly scores, and NCDG@K ranking scores for different detectors for the selected batch.')
+
+	st.write('The NCDG@K ranking scores indicate how well a detector ranks the anomalous dimensions in terms of their contribution to the aggregated anomaly scores, providing insights into the interpretability of each detector.')
+
+	st.write('Note that in this plot, the NCDG@K ranking scores are only available for ground-truth anomalies with label = 1, and are set to 0 for normal data points.')
+
 	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
 						  scores_dfs_dict,
 						  contribution_dfs_dict,
@@ -228,6 +234,14 @@ with (tab_overall):
 		batch_id = batch_id[:-4]
 
 	st.header("Show Interpretability (NCDG@K) Curves")
+
+	st.image('figures/metric_to_combine_accuracy_and_interpretability.png', caption='Metric to combine accuracy and interpretability', use_column_width=True)
+
+
+	tmp_text = 'We aim to evaluate the stability of interpretability of detectors under different interpretability score value l set for FPs, which reflects the robustness of interpretability of detectors to the choice of l for FPs. A more stable interpretability curve across different L values indicates a more robust interpretability of the detector, as it is less sensitive to the specific choice of L for FPs.'
+
+	st.write('This section visualizes the interpretability curves (NCDG@K curves) with different interpretability score l being set for FPs.')
+	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linespace(0, 1, 50) is used. The NCDG@K curve shows how the interpretability of a detector changes as we vary the interpretability value set for false positives (FPs).')
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
 
 # Tab for exploring individual results
