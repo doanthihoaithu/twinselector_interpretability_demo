@@ -178,6 +178,173 @@ def process_anomaly_index_to_windows(label_ts):
 	# print("Anomaly windows", windows)
 	return windows
 
+def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map):
+	"""
+	Plots a batch of multivariate time series using Plotly.
+
+	Args:
+		df (DataFrame): DataFrame containing multivariate time series data.
+	"""
+	# Check if DataFrame is empty
+	if df.empty:
+		st.warning("👻 It's a ghost town in here... No data found for plotting! Please select something from above to view data.")
+		return
+
+	# Create subplots for each time series
+	num_series = len(df.columns)
+
+	# fig = make_subplots(rows=num_series + 1, cols=1, shared_xaxes=True, vertical_spacing=0.02)
+
+	data = []
+	# Add traces for each time series
+	# for i, col in enumerate(df.columns):
+	# 	# print(i, col)
+	# 	# print(df.shape)
+	#
+	# 	# fig.add_trace(
+	# 	# 	go.Scatter(x=df.index.to_list(), y=df[col].to_list(), mode='lines', name=col),
+	# 	# 	row=i + 1,
+	# 	# 	col=1
+	# 	# )
+	#
+	# 	data.append(go.Scatter(x=df.index.to_list(), y=df[col].to_list(),
+	# 						   mode='lines',
+	# 						   name=col,
+	# 						   xaxis='x',
+	# 						   yaxis='y' if i == 0 else f'y{i+1}',
+	# 						   legendgroup='mts_data',
+	# 						   # visible='legendonly',
+	# 						   ),)
+	# 	# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+	# 	# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+	# 	# 					   mode='markers',
+	# 	# 					   fillcolor= 'red',
+	# 	# 					   name=col,
+	# 	# 					   xaxis='x',
+	# 	# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+	# 	# 					   ), )
+
+	is_anomaly_ts = multivariate_labels_df.sum(axis=1) > 0
+	data.append(go.Scatter(x=df.index.to_list(), y=is_anomaly_ts.astype(int).to_list(),
+						   mode='lines',
+						   fillcolor= 'black',
+						   name='Anomaly Label',
+						   xaxis='x',
+						   yaxis='y',
+						   legendgroup='univariate_anomaly_label',
+						   ),
+				)
+
+	if len(scores_dfs_dict.keys()) > 0:
+		# Add traces for each score DataFrame
+		for method_name, scores_df in scores_dfs_dict.items():
+			ranking_scores_numpy = ranking_scores_dfs_dict[method_name]
+			color = detector_color_map.get(method_name, 'black')  # Default to black if method name not found in color map
+			# print('Color for method', method_name, color)
+			contribution_df = contribution_dfs_dict[method_name]
+			customdata = []
+			ranking_customdata = []
+			# print('Contribution.shape', contribution_df.shape)
+			# print('Score shape', scores_df.shape)
+			print(f'Contribution df shape', contribution_df.shape)
+			for row_index, row in contribution_df.iterrows():
+				# print(f'Row index {row_index}', row)
+				dimensional_label = multivariate_labels_df.iloc[row_index].values
+				top_1_id = int(row[2])
+				top_2_id = int(row[1])
+				hit_k_score = row[0]
+				# print(row_index, row)
+				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
+				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
+				customdata.append(str_list)
+				ranking_customdata.append(ranking_list)
+			# print('Contribution shape', len(customdata))
+			# fig.add_trace(
+			# 	go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+			# 			   mode='lines', name=f"{method_name} score"),
+			# 	row=num_series + 1,
+			# 	col=1
+			# )
+			data.append(go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+						   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y2',
+								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+								   customdata=customdata,
+								   line=dict(color=color),
+								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+								   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
+								   legendgroup=method_name
+								   ),)
+
+			data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y3',
+								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+								   customdata=ranking_customdata,
+								   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+								   # hovertemplate="%{y:.4f}",
+								   line=dict(color=color),
+								   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+								   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+								   legendgroup=method_name
+								   ), )
+
+	layout = dict(
+		# height=100 * (num_series + 1),
+		height=200 * 3,
+		showlegend=True,
+		hoversubplots="axis",
+		title=dict(text=f'Anomaly scores and Interpretability scores (NCDG@K) of detectors are shown in the last two subplots, with their contribution to the score in the hover.'),
+		hovermode="x unified",
+		grid=dict(rows=3, columns=1),
+		# yaxis=dict(title=df.columns[0]),
+		# yaxis1=dict(title=df.columns[1])
+		# yaxes=[dict(title=f, showgrid=True, zeroline=False, showline=True, ticks='outside', row=num_series+1, col=1) for f in df.columns],
+		# use_container_width=True
+	)
+
+
+	fig = go.Figure(data=data, layout=layout)
+	# for i, col in enumerate(df.columns):
+	# 	# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+	# 	xref = 'x' if i == 0 else f'x{i+1}'
+	# 	yref = 'y' if i == 0 else f'y{i+1}'
+	# 	# for anomaly_index in anomaly_ts.index.to_list():
+	# 	anomaly_windows = process_anomaly_index_to_windows(multivariate_labels_df[col])
+	# 	for start, end in anomaly_windows:
+	# 		# fig.add_vrect(x=anomaly_ts.index.to_list()[0], line_dash='solid', line_color='red', opacity=0.2, xref='x',
+	# 		# 			  yref=yref)
+	# 		fig.add_vrect(x0=start, x1=end, fillcolor='red', line_color='red', opacity=0.2, xref='x', yref=yref)
+	# 	# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+	# 	# 					   mode='markers',
+	# 	# 					   fillcolor='red',
+	# 	# 					   name=col,
+	# 	# 					   xaxis='x',
+	# 	# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+	# 	# 					   ), )
+
+	# for i, col in enumerate(df.columns):
+	# 	fig.update_layout(**{f'yaxis{i+1}': dict(title=col, showgrid=True, zeroline=False, showline=True, ticks='outside')})
+
+	fig.update_layout(**{f'yaxis1': dict(title='Label', showgrid=True, zeroline=False, showline=True, ticks='outside',
+										 # tickangle=30
+										 )})
+	fig.update_layout(**{f'yaxis2': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+													   # tickangle=30
+													   )})
+	fig.update_layout(**{
+		f'yaxis3': dict(title='NCDG@K', showgrid=True, zeroline=False, showline=True, ticks='outside',
+										# tickangle=30
+										)})
+
+	# fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
+	# print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
+	# fig.write_image(f'images/{batch_id}_mts_vs_scores.png', scale=1.0)  # Save the figure to a file
+	# print(f"Saved static image for batch {batch_id} at images/{batch_id}_mts_vs_scores.png")
+
+	# Display the plot in Streamlit
+	st.plotly_chart(fig, use_container_width=True, key='plot_mts_simple')
 def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
 				   ranking_scores_dfs_dict,
 				   detector_color_map):

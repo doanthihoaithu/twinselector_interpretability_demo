@@ -20,7 +20,7 @@ from sklearn.metrics._ranking import _ndcg_sample_scores
 # print("S3 df shape", df.shape)
 
 from utils.constant import list_measures, list_length, method_group, methods_ens, old_method, all_datasets
-from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts, \
+from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch_mts, plot_batch_mts_simple, \
 	estimate_dimension_contribution_with_a_buffer, plot_interpretability_curves
 
 # from models.run_model import run_model
@@ -43,7 +43,7 @@ from utils.helper import generate_dataframe, plot_box_plot, add_rect, plot_batch
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 st.markdown(
         """
         <style>
@@ -334,8 +334,15 @@ with (tab_explore):
 	# 			   ranking_scores_dfs_dict,
 	# 			   detector_color_map)
 
+
 	image_path = f'images/{batch_id}_mts_vs_scores.png'
 	st.image(image_path, caption=f'MTS and scores for {batch_id}', use_column_width=True)
+
+	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+						  scores_dfs_dict,
+						  contribution_dfs_dict,
+						  ranking_scores_dfs_dict,
+						  detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
