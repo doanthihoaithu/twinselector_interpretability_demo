@@ -346,7 +346,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 	# print(f"Saved static image for batch {batch_id} at images/{batch_id}_mts_vs_scores.png")
 
 	# Display the plot in Streamlit
-	st.plotly_chart(fig, use_container_width=True, key='plot_mts_simple')
+	st.plotly_chart(fig, use_container_width=True, key='plot_mts_simple', validate=False)
 def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
 				   ranking_scores_dfs_dict,
 				   detector_color_map):
