@@ -227,7 +227,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 	# 	# 					   ), )
 
 	is_anomaly_ts = multivariate_labels_df.sum(axis=1) > 0
-	data.append(go.Scatter(x=df.index.to_list(), y=is_anomaly_ts.astype(int).to_list(),
+	data.append(go.Scatter(x=df.index.astype(int).to_list(), y=is_anomaly_ts.astype(int).to_list(),
 						   mode='lines',
 						   fillcolor= 'black',
 						   name='Anomaly Label',
@@ -307,7 +307,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 	)
 
 
-	fig = go.Figure(data=data, layout=layout)
+	fig = go.Figure(data=data, layout=layout, _validate=False)
 	# for i, col in enumerate(df.columns):
 	# 	# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
 	# 	xref = 'x' if i == 0 else f'x{i+1}'

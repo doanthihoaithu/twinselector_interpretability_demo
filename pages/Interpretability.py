@@ -338,11 +338,11 @@ with (tab_explore):
 	image_path = f'images/{batch_id}_mts_vs_scores.png'
 	st.image(image_path, caption=f'MTS and scores for {batch_id}', use_column_width=True)
 
-	# plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
-	# 					  scores_dfs_dict,
-	# 					  contribution_dfs_dict,
-	# 					  ranking_scores_dfs_dict,
-	# 					  detector_color_map)
+	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+						  scores_dfs_dict,
+						  contribution_dfs_dict,
+						  ranking_scores_dfs_dict,
+						  detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
