@@ -13,7 +13,7 @@ from sklearn.metrics._ranking import _ndcg_sample_scores
 
 from utils.constant import old_method
 from utils.helper import plot_batch_mts_simple, \
-	estimate_dimension_contribution_with_a_buffer, set_streamlit_page_config_once
+	estimate_dimension_contribution_with_a_buffer, set_streamlit_page_config_once, plot_interpretability_curves
 
 # from st_files_connection import FilesConnection
 # s3_conn = st.connection('s3', type=FilesConnection)
@@ -41,7 +41,7 @@ from utils.helper import plot_batch_mts_simple, \
     # '''
     # st.markdown(css, unsafe_allow_html=True)
 # st.set_page_config(layout="wide")
-set_streamlit_page_config_once(mode="wide")
+set_streamlit_page_config_once(mode="centered")
 st.markdown(
         """
         <style>
@@ -223,6 +223,12 @@ with (tab_overall):
 						  contribution_dfs_dict,
 						  ranking_scores_dfs_dict,
 						  detector_color_map)
+
+	if batch_id.endswith('.zip'):
+		batch_id = batch_id[:-4]
+
+	st.header("Show Interpretability Curves")
+	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
 
 # Tab for exploring individual results
 # with tab_explore:
