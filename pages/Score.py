@@ -242,6 +242,10 @@ with (tab_overall):
 
 	st.write('This section visualizes the interpretability curves (NCDG@K curves) with different interpretability score l being set for FPs.')
 	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linspace(0, 1, 50) is used. The NCDG@K curve shows how the accuracy of a detector changes when we penalize TPs which are not fully interpretable and vary the interpretability value set for FPs.')
+	st.markdown('Initial insights from the interpretability curves: \n')
+	st.markdown('Good interpretable detector: <detector>_vus_pr_interp_avg >= <detector>_vus_pr')
+	st.markdown('Bad interpretable detector: <detector>_vus_pr_interp_avg << <detector>_vus_pr')
+
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
 
 # Tab for exploring individual results

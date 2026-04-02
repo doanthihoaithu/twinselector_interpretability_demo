@@ -577,7 +577,7 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 			x=alg_L_value_list,
 			y=alg_vus_pr_list,
 			mode='lines+text',
-			name=f'{alg}_vus_pr_interp_avg={overall_interpretability_score:.3f}',
+			name=f'{alg}_vus_pr_interp (avg={overall_interpretability_score:.3f})',
 			line=dict(color=color),
 			text=[f'{alg}_vus_pr_interp_avg={overall_interpretability_score:.3f}'],
 			textposition='top right',
