@@ -5,6 +5,9 @@
 @what: ADecimo
 """
 
+import kaleido #required
+print('kaleido version:', kaleido.__version__) #0.2.1
+
 
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -15,6 +18,7 @@ import plotly.graph_objects as go
 from numpy.random import default_rng as rng
 import plotly.figure_factory as ff
 import numpy as np
+
 
 import matplotlib.colors as mcolors
 
@@ -344,9 +348,12 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 
 	# st.plotly_chart(fig)
 
+	# fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
+	# print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
+	fig.write_image(f'images/{batch_id}_mts_vs_scores.png', scale=1.0)  # Save the figure to a file
+	print(f"Saved static image for batch {batch_id} at images/{batch_id}_mts_vs_scores.png")
+
 	# Display the plot in Streamlit
-	fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
-	print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
 	st.plotly_chart(fig, use_container_width=True, key='plot_mts')
 
 def plot_interpretability_curves(visualized_batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map):
@@ -455,8 +462,10 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 	# 												   # tickangle=30
 	# 												   )})
 
-	fig.write_html(f'html/{visualized_batch_id}.zip_interpretability_curves.html')  # Save the figure to a file
-	print(f"Saved interpretability curves plot for batch {visualized_batch_id} at html/{visualized_batch_id}.zip_interpretability_curves.html")
+	# fig.write_html(f'html/{visualized_batch_id}.zip_interpretability_curves.html')  # Save the figure to a file
+	# print(f"Saved interpretability curves plot for batch {visualized_batch_id} at html/{visualized_batch_id}.zip_interpretability_curves.html")
+	fig.write_image(f'images/{visualized_batch_id}_interpretability_curves.png')  # Save the figure to a file
+	print(f"Saved interpretability curves image for batch {visualized_batch_id} at images/{visualized_batch_id}_interpretability_curves.png")
 	# Display the plot in Streamlit
 	st.plotly_chart(fig, use_container_width=True, key='plot_interpretability_curves')
 

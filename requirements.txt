@@ -8,3 +8,4 @@ seaborn
 scikit-learn
 s3fs
 st-files-connection
+kaleido==0.2.1
