@@ -13,7 +13,7 @@ from sklearn.metrics._ranking import _ndcg_sample_scores
 
 from utils.constant import list_measures, list_length, method_group, methods_ens, old_method
 from utils.helper import generate_dataframe, plot_box_plot, estimate_dimension_contribution_with_a_buffer, \
-	plot_interpretability_curves, set_streamlit_page_config_once
+	plot_interpretability_curves, set_streamlit_page_config_once, plot_batch_mts
 
 # from st_files_connection import FilesConnection
 # s3_conn = st.connection('s3', type=FilesConnection)
@@ -41,7 +41,7 @@ from utils.helper import generate_dataframe, plot_box_plot, estimate_dimension_c
     # '''
     # st.markdown(css, unsafe_allow_html=True)
 # st.set_page_config(layout="centered")
-set_streamlit_page_config_once(mode="centered")
+set_streamlit_page_config_once(mode="wide")
 st.markdown(
         """
         <style>
@@ -55,7 +55,7 @@ st.markdown(
         """,
         unsafe_allow_html=True,
     )
-st.markdown('# Interpretability Evaluation')
+st.markdown('# Interpretability Evaluation (Very Slow to Load => geting WebSocketConnection error when deploying online in Streamlit Cloud, will optimize it in the future)')
 # st.markdown('Overall evaluation of 125 classification algorithms used for model selection for anomaly detection.
 # We utilize 496 randomly selected time series from the TSB-UAD benchmark.')
 
@@ -63,7 +63,7 @@ mts_root_data_dir = 'data/mts'
 datasets = os.listdir(mts_root_data_dir)
 mts_infor_dict = {f: {
 			'mts_data_dir' : f'data/mts/{f}/data',
-			'mts_scores_dir' : f'data/mts/{f}/zip_sub_scores',
+			'mts_scores_dir' : f'data/mts/{f}/scores',
 			'mts_merged_scores_dir' : f'data/mts/{f}/merged_scores/{f}'
 		} for f in datasets}
 # mts_data_dir = 'data/mts/settings_one/data'
@@ -73,22 +73,22 @@ mts_infor_dict = {f: {
 default_dataset = 'settings_six'
 test_df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_inference_time.csv')
 test_df.sort_values(by=['filename'], ascending=[True], inplace=True)
-# testing_batch = [f'{f}.zip' for f in test_df['filename'].unique()]
-testing_batch = ['synthetic_batch_0.out',
-				'synthetic_batch_1.out',
-				'synthetic_batch_10.out',
-				'synthetic_batch_1001.out',
-				'synthetic_batch_1002.out',
-				'synthetic_batch_1003.out',
-				'synthetic_batch_1004.out',
-				'synthetic_batch_1005.out',
-				'synthetic_batch_1007.out',
-				'synthetic_batch_1008.out',
-				'synthetic_batch_101.out',
-				'synthetic_batch_1010.out',
-				'synthetic_batch_1011.out',
-				'synthetic_batch_1012.out']
-testing_batch = [f'{f}.zip' for f in testing_batch]
+testing_batch = [f'{f}.zip' for f in test_df['filename'].unique()]
+# testing_batch = ['synthetic_batch_0.out',
+# 				'synthetic_batch_1.out',
+# 				'synthetic_batch_10.out',
+# 				'synthetic_batch_1001.out',
+# 				'synthetic_batch_1002.out',
+# 				'synthetic_batch_1003.out',
+# 				'synthetic_batch_1004.out',
+# 				'synthetic_batch_1005.out',
+# 				'synthetic_batch_1007.out',
+# 				'synthetic_batch_1008.out',
+# 				'synthetic_batch_101.out',
+# 				'synthetic_batch_1010.out',
+# 				'synthetic_batch_1011.out',
+# 				'synthetic_batch_1012.out']
+# testing_batch = [f'{f}.zip' for f in testing_batch]
 mts_data_dir = mts_infor_dict[default_dataset]['mts_data_dir']
 mts_scores_dir = mts_infor_dict[default_dataset]['mts_scores_dir']
 list_batches = sorted([f for f in os.listdir(mts_data_dir) if 'multivariate_labels' not in f and f in testing_batch])
@@ -327,16 +327,16 @@ with (tab_explore):
 
 	# Plot box plot using Plotly
 	st.header("Show Time Series and Anomaly Scores + Interpretability Scores (NCDG@K-only available for ground-truth anomalies)")
-	st.markdown('Disabled for now as it is very slow to visualize all the scores for all the detectors, and the interpretability curves already give a good overview of the interpretability performance of the detectors. Will re-enable it in the future with some optimizations to speed up the visualization.')
-	# plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
-	# 			   scores_dfs_dict,
-	# 			   contribution_dfs_dict,
-	# 			   ranking_scores_dfs_dict,
-	# 			   detector_color_map)
+	# st.markdown('Disabled for now as it is very slow to visualize all the scores for all the detectors, and the interpretability curves already give a good overview of the interpretability performance of the detectors. Will re-enable it in the future with some optimizations to speed up the visualization.')
+	plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+				   scores_dfs_dict,
+				   contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map)
 
 
-	image_path = f'images/{batch_id}_mts_vs_scores.png'
-	st.image(image_path, caption=f'MTS and scores for {batch_id}', use_column_width=True)
+	# image_path = f'images/{batch_id}_mts_vs_scores.png'
+	# st.image(image_path, caption=f'MTS and scores for {batch_id}', use_column_width=True)
 
 	# plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
 	# 					  scores_dfs_dict,

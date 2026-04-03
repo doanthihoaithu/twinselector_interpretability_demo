@@ -11,9 +11,9 @@ import plotly
 import streamlit as st
 from sklearn.metrics._ranking import _ndcg_sample_scores
 
-from utils.constant import old_method
-from utils.helper import plot_batch_mts_simple, \
-	estimate_dimension_contribution_with_a_buffer, set_streamlit_page_config_once, plot_interpretability_curves
+from utils.constant import list_measures, list_length, method_group, methods_ens, old_method
+from utils.helper import generate_dataframe, plot_box_plot, estimate_dimension_contribution_with_a_buffer, \
+	plot_interpretability_curves, set_streamlit_page_config_once, plot_batch_mts
 
 # from st_files_connection import FilesConnection
 # s3_conn = st.connection('s3', type=FilesConnection)
@@ -40,8 +40,8 @@ from utils.helper import plot_batch_mts_simple, \
     # </style>
     # '''
     # st.markdown(css, unsafe_allow_html=True)
-# st.set_page_config(layout="wide")
-set_streamlit_page_config_once(mode="centered")
+# st.set_page_config(layout="centered")
+set_streamlit_page_config_once(mode="wide")
 st.markdown(
         """
         <style>
@@ -55,7 +55,9 @@ st.markdown(
         """,
         unsafe_allow_html=True,
     )
-st.markdown('# Score visualization')
+st.markdown('# Interpretability Evaluation')
+st.text('No interactive visualization for MTS and Scores. Only several examples of MTS are included for tab **Explore the results**.')
+		# 'The reason is that visualizing all the MTS and scores for all the detectors is very time consuming, while the interpretability curves already give a good overview of the interpretability performance of the detectors. We will re-enable it in the future with some optimizations to speed up the visualization.'
 # st.markdown('Overall evaluation of 125 classification algorithms used for model selection for anomaly detection.
 # We utilize 496 randomly selected time series from the TSB-UAD benchmark.')
 
@@ -107,15 +109,113 @@ combined_interpretability_metrics_of_base_detectors_df['INTERPRETABILITY_SCORE']
 combined_interpretability_metrics_of_base_detectors_df['FFVUS_PR'] = combined_interpretability_metrics_of_base_detectors_df.merge(combined_metrics_of_base_detectors_df[['algorithm','test_batch_id', 'FFVUS_PR']], on=['algorithm', 'test_batch_id'], how='left')['FFVUS_PR']
 
 # Create tabs for displaying results
-tab_overall, tab_explore, = st.tabs(["Overall scores", "Explore the results"])
+tab_overall, tab_explore, = st.tabs(["Overall results", "Explore the results"])
 
-with tab_explore:
-	st.markdown('Nothing here!')
+with tab_overall:
+	col_metric_over, col_dataset_over = st.columns([8, 2])
+
+	# Metric selection
+	with col_metric_over:
+		metric_name = st.selectbox('Pick a measure',
+								   list_measures,
+								   help="Select the accuracy metric to evaluate the models.")
+
+	# Dataset selection
+	with col_dataset_over:
+		datasets = st.multiselect('Pick datasets',
+								  ['settings_six'],
+								  default='settings_six',
+								  help="Select one or more datasets for analysis.")
+
+	# Method selection
+	# with col_method_over:
+	# 	methods_family = st.multiselect('Pick methods:',
+	# 									list(method_group.keys()),
+	# 									disabled=True,
+	# 									help="Select one or more method groups for comparison.")
+	#
+	# # Window length selection
+	# with col_length_over:
+	# 	length = st.multiselect('Pick window lengths:',
+	# 							list_length,
+	# 							disabled=True,
+	# 							help="Select the time window lengths applicable to the selected methods.")
+
+
+	current_metric_df = combined_metrics_of_base_detectors_df[['algorithm', 'test_batch_id', metric_name]]
+
+	oracle_metric = current_metric_df[
+		current_metric_df['algorithm'].isin(old_method)].groupby(['test_batch_id'])[
+		[metric_name]].max()
+	oracle_metric['algorithm'] = 'oracle'
+	oracle_metric.reset_index(inplace=True)
+
+	current_metric_df = pd.concat([current_metric_df, oracle_metric], axis=0, ignore_index=True)
+
+	df = pd.DataFrame()
+	df['test_batch_id'] = combined_metrics_of_base_detectors_df['test_batch_id'].unique()
+	for alg in current_metric_df['algorithm'].unique():
+		metric_score_df = current_metric_df[current_metric_df['algorithm'] == alg][['test_batch_id', metric_name]]
+		df[alg] = df.merge(metric_score_df, on='test_batch_id', how='left')[metric_name]
+
+	df = df.set_index('test_batch_id')
+	df.index.name = 'filename'
+	df.sort_index(inplace=True)
+	df['dataset'] = 'settings_six'
+
+	# df = pd.read_csv(f'data/mts/{default_dataset}/merged_scores/{default_dataset}/current_accuracy_{metric_name}.csv')
+	# df = df.set_index('filename')
+
+	# Generate dataframe for plotting
+	methods_family = []
+	length = []
+	df_toplot = generate_dataframe(df, datasets, methods_family, length, type_exp='_score')
+	st.dataframe(df_toplot, use_container_width=True)
+
+	# Plot box plot using Plotly
+	plot_box_plot(df_toplot, measure_name=metric_name)
+
+# with tab_examples:
+# 	# Setup columns for selecting metric, dataset, method, and window length
+# 	col_dataset_exp, col_ts_exp = st.columns([1,1])
+#
+# 	example_batch_ids = [f.replace('_mts_vs_scores.html', '') for f in os.listdir('html/') if f.endswith('_mts_vs_scores.html')]
+#
+# 	# Metric selection
+# 	with col_dataset_exp:
+# 		dataset_exp = st.selectbox('Pick a dataset',
+# 								   ['settings_six'],
+# 								   key='example_dataset_select',
+# 								   help="Select a synthetic dataset to explore.")
+#
+# 	# Dataset selection
+# 	with col_ts_exp:
+# 		# datasets = st.multiselect('Pick datasets',
+# 		# 						  all_datasets,
+# 		# 						  help="Select one or more datasets for analysis.")
+# 		print("example_batch_ids", example_batch_ids)
+# 		batch_id = st.selectbox('Pick synthetic batch:',
+# 								example_batch_ids,
+# 								key='example_batch_select',
+# 								help="Select one or more datasets for analysis.")
+#
+# 	path_to_html_1 = f'html/{batch_id}_mts_vs_scores.html'
+# 	path_to_html_2 =  f'html/{batch_id}_interpretability_curves.html'
+#
+# 	with open(path_to_html_1, 'r') as f:
+# 		html_content_1 = f.read()
+# 	st.header("Show Time Series and Anomaly Scores + Interpretability Scores (NCDG@K-only available for ground-truth anomalies)")
+# 	st.components.v1.html(html_content_1, scrolling=True, height=1000)
+# 	with open(path_to_html_2, 'r') as f:
+# 		html_content_2 = f.read()
+# 	st.header("Show Interpretability Curves")
+# 	st.components.v1.html(html_content_2, scrolling=True, height=800)
+
 
 # Tab for overall results with inline selection
-with (tab_overall):
+with (tab_explore):
 	# Setup columns for selecting metric, dataset, method, and window length
-	col_dataset_exp, col_ts_exp = st.columns([1, 3])
+	col_dataset_exp, col_ts_exp, col_meth_exp, col_length_exp = st.columns([1, 1, 1, 1])
 
 	# Metric selection
 	with col_dataset_exp:
@@ -132,6 +232,16 @@ with (tab_overall):
 								  list_batches,
 								  help="Select one or more datasets for analysis.")
 		batch_multivariate_labels = batch_id.replace('.zip', '.multivariate_labels.zip')
+
+	# Window length selection
+	with col_length_exp:
+		length_selected_exp = st.selectbox('Pick a window length', list_length, disabled=True)
+
+	# Method selection
+	with col_meth_exp:
+		method_selected_exp = st.selectbox('Pick a method', [meth.format(length_selected_exp) for meth in methods_ens],
+										   disabled=True)
+
 
 
 	path_ts = f'data/mts/{dataset_exp}/data/{batch_id}'
@@ -167,7 +277,7 @@ with (tab_overall):
 		anomaly_score_path = os.path.join(mts_scores_dir, alg, batch_id)
 		# distribution_file_name = batch_id.replace('.zip', '.score_distribution.zip')
 		distribution_file_name = batch_id.replace('.out.zip', '.out.dimension_contribution.zip')
-		# print('distributionfilename', distribution_file_name)
+		print('distributionfilename', distribution_file_name)
 		contribution_score_path = os.path.join(mts_scores_dir, alg, distribution_file_name)
 
 		# df = s3_conn.read(
@@ -217,38 +327,31 @@ with (tab_overall):
 	detector_color_map['decision_tree_128_average_4'] = 'green'
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
-	st.header("Show Scores")
-	st.write('This section visualizes labels, anomaly scores, and NCDG@K ranking scores for different detectors for the selected batch.')
+	# Plot box plot using Plotly
+	st.header("Show Time Series and Anomaly Scores + Interpretability Scores (NCDG@K-only available for ground-truth anomalies)")
+	st.markdown('Disabled for now as it is very slow to visualize all the scores for all the detectors, and the interpretability curves already give a good overview of the interpretability performance of the detectors. Will re-enable it in the future with some optimizations to speed up the visualization.')
 
-	st.write('The NCDG@K ranking scores indicate how well a detector ranks the anomalous dimensions in terms of their contribution to the aggregated anomaly scores, providing insights into the interpretability of each detector.')
+	# plot_batch_mts(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+	# 			   scores_dfs_dict,
+	# 			   contribution_dfs_dict,
+	# 			   ranking_scores_dfs_dict,
+	# 			   detector_color_map)
 
-	st.write('Note that in this plot, the NCDG@K ranking scores are only available for ground-truth anomalies with label = 1, and are set to 0 for normal data points.')
 
-	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
-						  scores_dfs_dict,
-						  contribution_dfs_dict,
-						  ranking_scores_dfs_dict,
-						  detector_color_map)
+	image_path = f'images/{batch_id}_mts_vs_scores.png'
+	st.image(image_path, caption=f'MTS and scores for {batch_id}', use_column_width=True)
+
+	# plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
+	# 					  scores_dfs_dict,
+	# 					  contribution_dfs_dict,
+	# 					  ranking_scores_dfs_dict,
+	# 					  detector_color_map)
 
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
 
-	st.header("Show Interpretability (NCDG@K) Curves")
-
-	st.image('figures/metric_to_combine_accuracy_and_interpretability.png', caption='Metric to combine accuracy and interpretability', use_column_width=True)
-
-
-	tmp_text = 'We aim to evaluate the stability of interpretability of detectors under different interpretability score value l set for FPs, which reflects the robustness of interpretability of detectors to the choice of l for FPs. A more stable interpretability curve across different L values indicates a more robust interpretability of the detector, as it is less sensitive to the specific choice of L for FPs.'
-
-	st.write('This section visualizes the interpretability curves (NCDG@K curves) with different interpretability score l being set for FPs.')
-	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linspace(0, 1, 50) is used. The NCDG@K curve shows how the accuracy of a detector changes when we penalize TPs which are not fully interpretable and vary the interpretability value set for FPs.')
-	st.markdown('Initial insights from the interpretability curves: \n')
-	st.markdown('Good interpretable detector D: D_VUS_IA >> D_VUS_PR')
-	st.markdown('Bad interpretable detector D: D_VUS_IA << D_VUS_PR')
-	st.markdown('Which detector is the best? Detector D if D_VUS_IA >> D_VUS_PR >> other detectors. In this case, D is not only accurate but also has a stable interpretability across different L values for FPs, indicating that it is robustly interpretable regardless of the specific choice of L for FPs.')
-	st.markdown('For comparing all detectors on this metric, please navigate page "Interpretability" and select the second metric ("INTERPRETABILITY_CONDITIONAL_VOLUMN_PR_WITH_NDCG_HIT_5_SCORE").')
-
-	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
+	st.header("Show Interpretability Curves")
+	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map )
 
 # Tab for exploring individual results
 # with tab_explore:
