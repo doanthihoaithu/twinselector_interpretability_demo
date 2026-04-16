@@ -283,7 +283,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 								   ),)
 
 			data.append(go.Scatter(x=scores_df.index.astype(int).to_list(), y=ranking_scores_numpy.tolist(),
-								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y3',
+								   mode='lines', name=f"{method_name} NDCG@k", xaxis='x', yaxis=f'y3',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
 								   # customdata=ranking_customdata,
 								   # hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
@@ -299,7 +299,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 		height=200 * 3,
 		showlegend=True,
 		hoversubplots="axis",
-		title=dict(text=f'Anomaly scores and Interpretability scores (NCDG@K) of detectors are shown in the last two subplots, with their contribution to the score in the hover.'),
+		title=dict(text=f'Anomaly scores and Interpretability scores (NDCG@k) of detectors are shown in the last two subplots, with their contribution to the score in the hover.'),
 		hovermode="x unified",
 		grid=dict(rows=3, columns=1),
 		# yaxis=dict(title=df.columns[0]),
@@ -338,7 +338,7 @@ def plot_batch_mts_simple(batch_id, df, multivariate_labels_df, scores_dfs_dict,
 													   # tickangle=30
 													   )})
 	fig.update_layout(**{
-		f'yaxis3': dict(title='NCDG@K', showgrid=True, zeroline=False, showline=True, ticks='outside',
+		f'yaxis3': dict(title='NDCG@k', showgrid=True, zeroline=False, showline=True, ticks='outside',
 										# tickangle=30
 										)})
 
@@ -439,7 +439,7 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 								   ),)
 
 			data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
-								   mode='lines', name=f"{method_name} NCDG@K", xaxis='x', yaxis=f'y{num_series + 2}',
+								   mode='lines', name=f"{method_name} NDCG@k", xaxis='x', yaxis=f'y{num_series + 2}',
 								   # customdata=['a:1, b:2, c:3'] * len(scores_df),
 								   customdata=ranking_customdata,
 								   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
@@ -490,7 +490,7 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 													   # tickangle=30
 													   )})
 	fig.update_layout(**{
-		f'yaxis{df.shape[1] + 2}': dict(title='NCDG@K', showgrid=True, zeroline=False, showline=True, ticks='outside',
+		f'yaxis{df.shape[1] + 2}': dict(title='NDCG@k', showgrid=True, zeroline=False, showline=True, ticks='outside',
 										# tickangle=30
 										)})
 	# fig['layout']['yaxis1']['title'] = f'Sensor1'
