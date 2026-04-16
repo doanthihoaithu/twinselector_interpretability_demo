@@ -577,9 +577,9 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 			x=alg_L_value_list,
 			y=alg_vus_pr_list,
 			mode='lines+text',
-			name=f'{alg}_VUS_I (VUS_IA={overall_interpretability_score:.3f})',
+			name=f'{alg}_VUSi (aVUSi={overall_interpretability_score:.3f})',
 			line=dict(color=color),
-			text=[f'{alg}_VUS_IA={overall_interpretability_score:.3f}'],
+			text=[f'{alg}_aVUSi={overall_interpretability_score:.3f}'],
 			textposition='top right',
 			textfont=dict(color=color),
 			hovertemplate="%{y:.4f}",
@@ -624,8 +624,8 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 		# width=1000,
 		height=700,
 		legend=dict(orientation='v'),
-		xaxis_title='L_value',
-		yaxis_title='VUS_I',
+		xaxis_title='m_value',
+		yaxis_title='VUSi',
 		hovermode='x unified',
 	)
 
