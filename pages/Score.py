@@ -218,11 +218,11 @@ with (tab_overall):
 	detector_color_map['decision_tree_256_preds'] = 'blue'
 
 	st.header("Show Scores")
-	st.write('This section visualizes labels, anomaly scores, and NCDG@K ranking scores for different detectors for the selected batch.')
+	st.write('This section visualizes labels, anomaly scores, and NDCG@k ranking scores for different detectors for the selected batch.')
 
-	st.write('The NCDG@K ranking scores indicate how well a detector ranks the anomalous dimensions in terms of their contribution to the aggregated anomaly scores, providing insights into the interpretability of each detector.')
+	st.write('The NDCG@k ranking scores indicate how well a detector ranks the anomalous dimensions in terms of their contribution to the aggregated anomaly scores, providing insights into the interpretability of each detector.')
 
-	st.write('Note that in this plot, the NCDG@K ranking scores are only available for ground-truth anomalies with label = 1, and are set to 0 for normal data points.')
+	st.write('Note that in this plot, the NDCG@k ranking scores are only available for ground-truth anomalies with label = 1, and are set to 0 for normal data points.')
 
 	plot_batch_mts_simple(batch_id, batch_df[sensor_columns], batch_multivariate_labels_df,
 						  scores_dfs_dict,
@@ -233,15 +233,15 @@ with (tab_overall):
 	if batch_id.endswith('.zip'):
 		batch_id = batch_id[:-4]
 
-	st.header("Show Interpretability (NCDG@K) Curves")
+	st.header("Show Interpretability (NDCG@k) Curves")
 
 	st.image('figures/metric_to_combine_accuracy_and_interpretability.png', caption='Metric to combine accuracy and interpretability', use_column_width=True)
 
 
 	tmp_text = 'We aim to evaluate the stability of interpretability of detectors under different interpretability score value l set for FPs, which reflects the robustness of interpretability of detectors to the choice of l for FPs. A more stable interpretability curve across different L values indicates a more robust interpretability of the detector, as it is less sensitive to the specific choice of L for FPs.'
 
-	st.write('This section visualizes the interpretability curves (NCDG@K curves) with different interpretability score l being set for FPs.')
-	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linspace(0, 1, 50) is used. The NCDG@K curve shows how the accuracy of a detector changes when we penalize TPs which are not fully interpretable and vary the interpretability value set for FPs.')
+	st.write('This section visualizes the interpretability curves (NDCG@k curves) with different interpretability score l being set for FPs.')
+	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linspace(0, 1, 50) is used. The NDCG@k curve shows how the accuracy of a detector changes when we penalize TPs which are not fully interpretable and vary the interpretability value set for FPs.')
 	st.markdown('Initial insights from the interpretability curves: \n')
 	st.markdown('Good interpretable detector D: D_VUS_IA >> D_VUS_PR')
 	st.markdown('Bad interpretable detector D: D_VUS_IA << D_VUS_PR')
