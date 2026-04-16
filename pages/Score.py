@@ -238,14 +238,14 @@ with (tab_overall):
 	st.image('figures/metric_to_combine_accuracy_and_interpretability.png', caption='Metric to combine accuracy and interpretability', use_column_width=True)
 
 
-	tmp_text = 'We aim to evaluate the stability of interpretability of detectors under different interpretability score value l set for FPs, which reflects the robustness of interpretability of detectors to the choice of l for FPs. A more stable interpretability curve across different L values indicates a more robust interpretability of the detector, as it is less sensitive to the specific choice of L for FPs.'
+	tmp_text = 'We aim to evaluate the stability of interpretability of detectors under different interpretability score value m set for normal timestamps, which reflects the robustness of interpretability of detectors to the choice of m for normal timestamps. A more stable interpretability curve across different m values indicates a more robust interpretability of the detector, as it is less sensitive to the specific choice of m for normal timestamps.'
 
-	st.write('This section visualizes the interpretability curves (NDCG@k curves) with different interpretability score l being set for FPs.')
-	st.write('In this experiment, considering L the set of different values for l, |L|=50, L=np.linspace(0, 1, 50) is used. The NDCG@k curve shows how the accuracy of a detector changes when we penalize TPs which are not fully interpretable and vary the interpretability value set for FPs.')
+	st.write('This section visualizes the interpretability curves (NDCG@k curves) with different interpretability score m being set for normal timestamps.')
+	st.write('In this experiment, considering M the set of different values for m, |M|=50, M=np.linspace(0, 1, 50) is used. The NDCG@k curve shows how the accuracy of a detector changes when we penalize TPs + FNs which are not fully interpretable and vary the interpretability value set for normal timestamps.')
 	st.markdown('Initial insights from the interpretability curves: \n')
-	st.markdown('Good interpretable detector D: D_VUS_IA >> D_VUS_PR')
-	st.markdown('Bad interpretable detector D: D_VUS_IA << D_VUS_PR')
-	st.markdown('Which detector is the best? Detector D if D_VUS_IA >> D_VUS_PR >> other detectors. In this case, D is not only accurate but also has a stable interpretability across different L values for FPs, indicating that it is robustly interpretable regardless of the specific choice of L for FPs.')
+	st.markdown('Good interpretable detector D: D_aVUSi >> D_VUS_PR')
+	st.markdown('Bad interpretable detector D: D_aVUSi << D_VUS_PR')
+	st.markdown('Which detector is the best? Detector D if D_aVUSi >> D_VUS_PR >> other detectors. In this case, D is not only accurate but also has a stable interpretability across different m values for normal timestamps, indicating that it is robustly interpretable regardless of the specific choice of m for normal timestamps.')
 	st.markdown('For comparing all detectors on this metric, please navigate page "Interpretability" and select the second metric ("INTERPRETABILITY_CONDITIONAL_VOLUMN_PR_WITH_NDCG_HIT_5_SCORE").')
 
 	plot_interpretability_curves(batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map)
