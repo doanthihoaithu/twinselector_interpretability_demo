@@ -527,6 +527,419 @@ def plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contri
 	# Display the plot in Streamlit
 	st.plotly_chart(fig, use_container_width=True, key='plot_mts')
 
+def get_plot_batch_mts(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map, visualize_config):
+	"""
+	Plots a batch of multivariate time series using Plotly.
+
+	Args:
+		df (DataFrame): DataFrame containing multivariate time series data.
+	"""
+	# Check if DataFrame is empty
+	if df.empty:
+		st.warning("👻 It's a ghost town in here... No data found for plotting! Please select something from above to view data.")
+		return
+
+	# Create subplots for each time series
+	num_series = len(df.columns)
+
+	# fig = make_subplots(rows=num_series + 1, cols=1, shared_xaxes=True, vertical_spacing=0.02)
+
+	data = []
+	# Add traces for each time series
+	for i, col in enumerate(df.columns):
+		# print(i, col)
+		# print(df.shape)
+
+		# fig.add_trace(
+		# 	go.Scatter(x=df.index.to_list(), y=df[col].to_list(), mode='lines', name=col),
+		# 	row=i + 1,
+		# 	col=1
+		# )
+
+		data.append(go.Scatter(x=df.index.to_list(), y=df[col].to_list(),
+							   mode='lines',
+							   name=col,
+							   xaxis='x',
+							   yaxis='y' if i == 0 else f'y{i+1}',
+							   legendgroup='mts_data',
+							   # visible='legendonly',
+							   ),)
+		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+		# 					   mode='markers',
+		# 					   fillcolor= 'red',
+		# 					   name=col,
+		# 					   xaxis='x',
+		# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+		# 					   ), )
+
+	if len(scores_dfs_dict.keys()) > 0:
+		# Add traces for each score DataFrame
+		for method_name, scores_df in scores_dfs_dict.items():
+			ranking_scores_numpy = ranking_scores_dfs_dict[method_name]
+			color = detector_color_map.get(method_name, 'black')  # Default to black if method name not found in color map
+			# print('Color for method', method_name, color)
+			contribution_df = contribution_dfs_dict[method_name]
+			customdata = []
+			ranking_customdata = []
+			# print('Contribution.shape', contribution_df.shape)
+			# print('Score shape', scores_df.shape)
+			print(f'Contribution df shape', contribution_df.shape)
+			for row_index, row in contribution_df.iterrows():
+				# print(f'Row index {row_index}', row)
+				dimensional_label = multivariate_labels_df.iloc[row_index].values
+				top_1_id = int(row[2])
+				top_2_id = int(row[1])
+				hit_k_score = row[0]
+				# print(row_index, row)
+				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
+				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
+				customdata.append(str_list)
+				ranking_customdata.append(ranking_list)
+			# print('Contribution shape', len(customdata))
+			# fig.add_trace(
+			# 	go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+			# 			   mode='lines', name=f"{method_name} score"),
+			# 	row=num_series + 1,
+			# 	col=1
+			# )
+			if visualize_config.get('show_score', True):
+				data.append(go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+							   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y{num_series+1}',
+									   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+									   customdata=customdata,
+									   line=dict(color=color),
+									   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+									   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
+									   legendgroup=method_name
+									   ),)
+			if visualize_config.get('show_interpretability', True):
+				data.append(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+									   mode='lines', name=f"{method_name} NDCG@k", xaxis='x', yaxis=f'y{num_series + 2}',
+									   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+									   customdata=ranking_customdata,
+									   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+									   # hovertemplate="%{y:.4f}",
+									   line=dict(color=color),
+									   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+									   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+									   legendgroup=method_name
+									   ), )
+
+	if visualize_config.get('show_score', True):
+		num_series += 1
+	if visualize_config.get('show_interpretability', True):
+		num_series += 1
+
+	layout = dict(
+		# height=100 * (num_series + 1),
+		height=70 * (num_series),
+		showlegend=visualize_config.get('show_legend', True),
+		hoversubplots="axis",
+		title=dict(text=f'Multivariate Time Series of the selected batch: {batch_id}. Anomaly scores of detectors are shown in the last subplot, with their contribution to the score in the hover.') if visualize_config.get('show_title', True) else None,
+		hovermode="x unified",
+		grid=dict(rows=num_series, columns=1),
+		# yaxis=dict(title=df.columns[0]),
+		# yaxis1=dict(title=df.columns[1])
+		# yaxes=[dict(title=f, showgrid=True, zeroline=False, showline=True, ticks='outside', row=num_series+1, col=1) for f in df.columns],
+		# use_container_width=True
+	)
+
+
+	fig = go.Figure(data=data, layout=layout)
+	for i, col in enumerate(df.columns):
+		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+		xref = 'x' if i == 0 else f'x{i+1}'
+		yref = 'y' if i == 0 else f'y{i+1}'
+		# for anomaly_index in anomaly_ts.index.to_list():
+		anomaly_windows = process_anomaly_index_to_windows(multivariate_labels_df[col])
+		for start, end in anomaly_windows:
+			# fig.add_vrect(x=anomaly_ts.index.to_list()[0], line_dash='solid', line_color='red', opacity=0.2, xref='x',
+			# 			  yref=yref)
+			fig.add_vrect(x0=start, x1=end, fillcolor='red', line_color='red', opacity=0.2, xref='x', yref=yref)
+		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+		# 					   mode='markers',
+		# 					   fillcolor='red',
+		# 					   name=col,
+		# 					   xaxis='x',
+		# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+		# 					   ), )
+
+	for i, col in enumerate(df.columns):
+		fig.update_layout(**{f'yaxis{i+1}': dict(title=col, showgrid=True, zeroline=False, showline=True,
+												 ticks='outside',
+												 showticklabels=False,
+												 side='left')})
+
+	fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+													   # tickangle=30
+													   )})
+	fig.update_layout(**{
+		f'yaxis{df.shape[1] + 2}': dict(title='NDCG@k', showgrid=True, zeroline=False, showline=True, ticks='outside',
+										# tickangle=30
+										)})
+
+	fig.update_layout(**{'plot_bgcolor': 'white'})
+	# fig['layout']['yaxis1']['title'] = f'Sensor1'
+	# for i, col in enumerate(df.columns):
+	# 	# fig['layout']['xaxis{}'.format(i)]['title'] = f'Sensor{i}'
+	# 	fig['layout']['yaxis{}'.format(i if i>0 else '')]['title'] = f'Sensor{i}'
+	# Update layout
+	# fig.update_layout(
+	# 	height=100 * (num_series+1),
+	# 	title_text="Batch of Multivariate Time Series",
+	# 	showlegend=True,
+	# 	hovermode="x unified",
+	# 	hoversubplots= "axis",
+	# )
+
+	# hist_data = [
+	# 	rng(0).standard_normal(200) - 2,
+	# 	rng(1).standard_normal(200),
+	# 	rng(2).standard_normal(200) + 2,
+	# ]
+	# group_labels = ["Group 1", "Group 2", "Group 3"]
+	#
+	# fig = ff.create_distplot(
+	# 	hist_data, group_labels, bin_size=[0.1, 0.25, 0.5]
+	# )
+
+	# st.plotly_chart(fig)
+
+	# fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
+	# print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
+	# fig.write_image(f'images/{batch_id}_mts_vs_scores.png', scale=1.0)  # Save the figure to a file
+	# print(f"Saved static image for batch {batch_id} at images/{batch_id}_mts_vs_scores.png")
+
+	# Display the plot in Streamlit
+	# st.plotly_chart(fig, use_container_width=True, key='plot_mts')
+	return fig
+
+def get_plot_batch_mts_and_table(batch_id, df, multivariate_labels_df, scores_dfs_dict, contribution_dfs_dict,
+				   ranking_scores_dfs_dict,
+				   detector_color_map, visualize_config, data_df):
+	"""
+	Plots a batch of multivariate time series using Plotly.
+
+	Args:
+		df (DataFrame): DataFrame containing multivariate time series data.
+	"""
+	# Check if DataFrame is empty
+	if df.empty:
+		st.warning("👻 It's a ghost town in here... No data found for plotting! Please select something from above to view data.")
+		return
+
+	# Create subplots for each time series
+	num_series = len(df.columns)
+
+	# fig = make_subplots(rows=num_series + 1, cols=1, shared_xaxes=True, vertical_spacing=0.02)
+
+	# data = []
+	# Add traces for each time series
+	fig = make_subplots(
+		rows=1, cols=2,
+		# shared_xaxes=True,
+		# vertical_spacing=0.03,
+		specs=[
+			[{"type": "scatter"}, {"type": "table"}],
+		]
+	)
+	for i, col in enumerate(df.columns):
+		# print(i, col)
+		# print(df.shape)
+
+		# fig.add_trace(
+		# 	go.Scatter(x=df.index.to_list(), y=df[col].to_list(), mode='lines', name=col),
+		# 	row=i + 1,
+		# 	col=1
+		# )
+
+		fig.add_trace(go.Scatter(x=df.index.to_list(), y=df[col].to_list(),
+							   mode='lines',
+							   name=col,
+							   xaxis='x',
+							   yaxis='y' if i == 0 else f'y{i+1}',
+							   legendgroup='mts_data',
+							   # visible='legendonly',
+							   ), row=1, col=1)
+		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+		# 					   mode='markers',
+		# 					   fillcolor= 'red',
+		# 					   name=col,
+		# 					   xaxis='x',
+		# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+		# 					   ), )
+
+	if len(scores_dfs_dict.keys()) > 0:
+		# Add traces for each score DataFrame
+		for method_name, scores_df in scores_dfs_dict.items():
+			ranking_scores_numpy = ranking_scores_dfs_dict[method_name]
+			color = detector_color_map.get(method_name, 'black')  # Default to black if method name not found in color map
+			# print('Color for method', method_name, color)
+			contribution_df = contribution_dfs_dict[method_name]
+			customdata = []
+			ranking_customdata = []
+			# print('Contribution.shape', contribution_df.shape)
+			# print('Score shape', scores_df.shape)
+			print(f'Contribution df shape', contribution_df.shape)
+			for row_index, row in contribution_df.iterrows():
+				# print(f'Row index {row_index}', row)
+				dimensional_label = multivariate_labels_df.iloc[row_index].values
+				top_1_id = int(row[2])
+				top_2_id = int(row[1])
+				hit_k_score = row[0]
+				# print(row_index, row)
+				# str_list = f'<b>Score:{hit_k_score:.2f}--s{top_1_id}:s{top_2_id}</b>'
+				str_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>:{f:.2f}' for i,f in enumerate(row.values.tolist())])
+				ranking_list = ",".join([f'<b style="color:{"red" if dimensional_label[i] == 1 else "black"};">s{i}</b>' for i in (-row).argsort().values.tolist()])
+				customdata.append(str_list)
+				ranking_customdata.append(ranking_list)
+			# print('Contribution shape', len(customdata))
+			# fig.add_trace(
+			# 	go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+			# 			   mode='lines', name=f"{method_name} score"),
+			# 	row=num_series + 1,
+			# 	col=1
+			# )
+			if visualize_config.get('show_score', True):
+				fig.add_trace(go.Scatter(x=scores_df.index.to_list(), y=scores_df[scores_df.columns[0]].to_list(),
+							   mode='lines', name=f"{method_name} score", xaxis='x', yaxis=f'y{num_series+1}',
+									   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+									   customdata=customdata,
+									   line=dict(color=color),
+									   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+									   hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}",
+									   legendgroup=method_name
+									   ),
+							  row=1, col=1
+							  )
+			if visualize_config.get('show_interpretability', True):
+				fig.add_trace(go.Scatter(x=scores_df.index.to_list(), y=ranking_scores_numpy.tolist(),
+									   mode='lines', name=f"{method_name} NDCG@k", xaxis='x', yaxis=f'y{num_series + 2}',
+									   # customdata=['a:1, b:2, c:3'] * len(scores_df),
+									   customdata=ranking_customdata,
+									   hovertemplate="%{y:.4f}<br><b>Ranking</b>: %{customdata}",
+									   # hovertemplate="%{y:.4f}",
+									   line=dict(color=color),
+									   # hovertemplate="%{y:.4f}<br><b>Interpretability Hit@2</b>: %{customdata}"
+									   # hovertemplate="%{y:.4f}<br><b>Contribution</b>: %{customdata}"
+									   legendgroup=method_name
+									   ),
+							  row=1, col=1
+							  )
+
+	if visualize_config.get('show_score', True):
+		num_series += 1
+	if visualize_config.get('show_interpretability', True):
+		num_series += 1
+
+	layout = dict(
+		# height=100 * (num_series + 1),
+		height=70 * (num_series),
+		showlegend=visualize_config.get('show_legend', True),
+		hoversubplots="axis",
+		title=dict(text=f'Multivariate Time Series of the selected batch: {batch_id}. Anomaly scores of detectors are shown in the last subplot, with their contribution to the score in the hover.') if visualize_config.get('show_title', True) else None,
+		hovermode="x unified",
+		grid=dict(rows=num_series, columns=1),
+		# yaxis=dict(title=df.columns[0]),
+		# yaxis1=dict(title=df.columns[1])
+		# yaxes=[dict(title=f, showgrid=True, zeroline=False, showline=True, ticks='outside', row=num_series+1, col=1) for f in df.columns],
+		# use_container_width=True
+	)
+
+	fig.update_layout(**layout)
+
+
+	# fig = go.Figure(data=data, layout=layout)
+
+
+	for i, col in enumerate(df.columns):
+		# anomaly_ts = multivariate_labels_df[multivariate_labels_df[col] == 1.0][col]
+		xref = 'x' if i == 0 else f'x{i+1}'
+		yref = 'y' if i == 0 else f'y{i+1}'
+		# for anomaly_index in anomaly_ts.index.to_list():
+		anomaly_windows = process_anomaly_index_to_windows(multivariate_labels_df[col])
+		for start, end in anomaly_windows:
+			# fig.add_vrect(x=anomaly_ts.index.to_list()[0], line_dash='solid', line_color='red', opacity=0.2, xref='x',
+			# 			  yref=yref)
+			# fig.add_vrect(x0=start, x1=end, fillcolor='red', line_color='red', opacity=0.2, xref='x', yref=yref)
+			fig.add_vrect(x0=start, x1=end, fillcolor='red', line_color='red', opacity=0.2, row=1, col=1)
+		# data.append(go.Scatter(x=anomaly_ts.index.to_list(), y=df[col][anomaly_ts.index].to_list(),
+		# 					   mode='markers',
+		# 					   fillcolor='red',
+		# 					   name=col,
+		# 					   xaxis='x',
+		# 					   yaxis='y' if i == 0 else f'y{i + 1}'
+		# 					   ), )
+
+	for i, col in enumerate(df.columns):
+		fig.update_layout(**{f'yaxis{i+1}': dict(title=col, showgrid=True, zeroline=False, showline=True,
+												 ticks='outside',
+												 showticklabels=False,
+												 side='left')})
+
+	fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+													   # tickangle=30
+													   )})
+	fig.update_layout(**{
+		f'yaxis{df.shape[1] + 2}': dict(title='NDCG@k', showgrid=True, zeroline=False, showline=True, ticks='outside',
+										# tickangle=30
+										)})
+
+	fig.update_layout(**{'plot_bgcolor': 'white'})
+
+	fig.add_trace(
+		go.Table(
+			header=dict(
+				values=[data_df.columns.to_list()],
+				font=dict(size=10),
+				align="left"
+			),
+			cells=dict(
+				values=[data_df[k].tolist() for k in data_df.columns[0:]],
+				align="left")
+		),
+		row=1, col=2
+	)
+	# fig['layout']['yaxis1']['title'] = f'Sensor1'
+	# for i, col in enumerate(df.columns):
+	# 	# fig['layout']['xaxis{}'.format(i)]['title'] = f'Sensor{i}'
+	# 	fig['layout']['yaxis{}'.format(i if i>0 else '')]['title'] = f'Sensor{i}'
+	# Update layout
+	# fig.update_layout(
+	# 	height=100 * (num_series+1),
+	# 	title_text="Batch of Multivariate Time Series",
+	# 	showlegend=True,
+	# 	hovermode="x unified",
+	# 	hoversubplots= "axis",
+	# )
+
+	# hist_data = [
+	# 	rng(0).standard_normal(200) - 2,
+	# 	rng(1).standard_normal(200),
+	# 	rng(2).standard_normal(200) + 2,
+	# ]
+	# group_labels = ["Group 1", "Group 2", "Group 3"]
+	#
+	# fig = ff.create_distplot(
+	# 	hist_data, group_labels, bin_size=[0.1, 0.25, 0.5]
+	# )
+
+	# st.plotly_chart(fig)
+
+	# fig.write_html(f'html/{batch_id}_mts_vs_scores.html')  # Save the figure to a file
+	# print(f"Saved interactive plot for batch {batch_id} at html/{batch_id}_mts_vs_scores.html")
+	# fig.write_image(f'images/{batch_id}_mts_vs_scores.png', scale=1.0)  # Save the figure to a file
+	# print(f"Saved static image for batch {batch_id} at images/{batch_id}_mts_vs_scores.png")
+
+	# Display the plot in Streamlit
+	# st.plotly_chart(fig, use_container_width=True, key='plot_mts')
+	return fig
+
 def plot_interpretability_curves(visualized_batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map):
 	"""
 	Plots a batch of multivariate time series using Plotly.
@@ -639,6 +1052,123 @@ def plot_interpretability_curves(visualized_batch_id, combined_interpretability_
 	print(f"Saved interpretability curves image for batch {visualized_batch_id} at images/{visualized_batch_id}_interpretability_curves.png")
 	# Display the plot in Streamlit
 	st.plotly_chart(fig, use_container_width=True, key='plot_interpretability_curves')
+
+def get_plot_interpretability_curves(visualized_batch_id, combined_interpretability_metrics_of_base_detectors_df, detector_color_map):
+	"""
+	Plots a batch of multivariate time series using Plotly.
+
+	Args:
+		df (DataFrame): DataFrame containing multivariate time series data.
+	"""
+
+	interpretability_detail_df = combined_interpretability_metrics_of_base_detectors_df[
+		combined_interpretability_metrics_of_base_detectors_df['test_batch_id'] == visualized_batch_id]
+	# print(interpretability_detail_df.columns)
+	# print(interpretability_detail_df.head())
+	# Check if DataFrame is empty
+	# if interpretability_detail_df.empty:
+	# 	st.warning(f"👻 It's a ghost town in here... No data of batch {visualized_batch_id} found for plotting! Please select something from above to view data.")
+	# 	return
+
+	vus_pr_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if
+					  col.startswith('vus_pr')]
+	L_value_columns = [col for col in combined_interpretability_metrics_of_base_detectors_df.columns if
+					   col not in vus_pr_columns and col.startswith('L_')]
+
+	fig = go.Figure()
+
+	# colors = list(mcolors.TABLEAU_COLORS.values())
+
+	for i, alg in enumerate(old_method + ['avg_ens'] + best_ms_combination + best_ms_selection):
+		color = detector_color_map.get(alg, 'black')  # Default to black if method name not found in color map
+
+		alg_vus_pr_list = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			][vus_pr_columns].values.reshape(-1).tolist()
+
+		alg_L_value_list = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			][L_value_columns].values.reshape(-1).tolist()
+
+		# print(alg_vus_pr_list.shape, alg_L_value_list.shape)
+
+		original_vus_pr = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			]['FFVUS_PR'].values.reshape(-1).tolist()[0]
+		overall_interpretability_score = interpretability_detail_df[
+			interpretability_detail_df['algorithm'] == alg
+			]['INTERPRETABILITY_SCORE'].values.reshape(-1).tolist()[0]
+
+		# Interpretability line
+		# print(alg_L_value_list[:10], alg_L_value_list[:10])
+		fig.add_trace(go.Scatter(
+			x=alg_L_value_list,
+			y=alg_vus_pr_list,
+			mode='lines+text',
+			name=f'{alg}_VUSi (aVUSi={overall_interpretability_score:.3f})',
+			line=dict(color=color),
+			text=[f'{alg}_aVUSi={overall_interpretability_score:.3f}'],
+			textposition='top right',
+			textfont=dict(color=color),
+			hovertemplate="%{y:.4f}",
+			legendgroup=alg
+		))
+		# print(original_vus_pr*len(alg_L_value_list))
+		fig.add_trace(go.Scatter(
+			x=alg_L_value_list,
+			y=[original_vus_pr] * len(alg_L_value_list),
+			mode='lines+text',
+			name=f'{alg}_VUS_PR={original_vus_pr:.3f}',
+			line=dict(color=color, dash='dash'),
+			text=[f'{alg}_VUS_PR={original_vus_pr:.3f}'],
+			textposition='top right',
+			textfont=dict(color=color),
+			hovertemplate="%{y:.4f}",
+			legendgroup=alg
+		))
+
+	# fig.add_trace(go.Scatter(
+	#     x=alg_L_value_list,
+	#     y=[overall_interpretability_score]*len(alg_L_value_list),
+	#     mode='lines+text',
+	#     name=f'{alg}_overall_interpretability={overall_interpretability_score:.3f}',
+	#     line=dict(color=color, dash='dash'),
+	#     text=[f'{alg}_overall_interpretability={overall_interpretability_score:.3f}'],
+	#     textposition='bottom right',
+	#     textfont=dict(color=color),
+	#     legendgroup=alg
+	# ))
+
+	# Horizontal baseline (axhline equivalent)
+	# fig.add_hline(
+	#     y=original_vus_pr,
+	#     line=dict(color=color, dash='dash'),
+	#     annotation_text=f'{alg}_vus_pr_origin={original_vus_pr:.3f}',
+	#     annotation_position='right',
+	#     legendgroup=alg
+	# )
+
+	fig.update_layout(
+		# width=1000,
+		height=700,
+		legend=dict(orientation='v'),
+		xaxis_title='m_value',
+		yaxis_title='VUSi',
+		hovermode='x unified',
+	)
+
+	return fig
+
+	# fig.update_layout(**{f'yaxis{df.shape[1]+1}': dict(title='Scores', showgrid=True, zeroline=False, showline=True, ticks='outside',
+	# 												   # tickangle=30
+	# 												   )})
+
+	# fig.write_html(f'html/{visualized_batch_id}.zip_interpretability_curves.html')  # Save the figure to a file
+	# print(f"Saved interpretability curves plot for batch {visualized_batch_id} at html/{visualized_batch_id}.zip_interpretability_curves.html")
+	# fig.write_image(f'images/{visualized_batch_id}_interpretability_curves.png')  # Save the figure to a file
+	# print(f"Saved interpretability curves image for batch {visualized_batch_id} at images/{visualized_batch_id}_interpretability_curves.png")
+	# # Display the plot in Streamlit
+	# st.plotly_chart(fig, use_container_width=True, key='plot_interpretability_curves')
 
 def generate_dataframe(df, datasets, methods_family, length, type_exp='_score'):
 	"""
